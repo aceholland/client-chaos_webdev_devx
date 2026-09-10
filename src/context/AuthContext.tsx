@@ -8,6 +8,7 @@ interface AuthContextType {
   allUsers: UserProfile[];
   loading: boolean;
   signIn: (email: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   signUp: (email: string, name: string, role?: UserRole) => Promise<void>;
   signOut: () => Promise<void>;
   switchMockUser: (userId: string) => void;
@@ -115,6 +116,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const signInWithGoogle = async () => {
+    if (isSupabaseConfigured) {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin,
+        },
+      });
+      if (error) throw error;
+    } else {
+      // Mock mode Google login simulation
+      let googleUser = allUsers.find(u => u.email === 'google.user@example.com');
+      if (!googleUser) {
+        googleUser = {
+          id: `user-google-${Date.now()}`,
+          email: 'google.user@example.com',
+          name: 'Google User',
+          role: 'member',
+          created_at: new Date().toISOString(),
+        };
+        setAllUsers(prev => [...prev, googleUser!]);
+      }
+      setUser(googleUser);
+      localStorage.setItem(LOCAL_STORAGE_CURRENT_USER_KEY, googleUser.id);
+    }
+  };
+
   const signUp = async (email: string, name: string, role: UserRole = 'member') => {
     if (isSupabaseConfigured) {
       const { error } = await supabase.auth.signUp({
@@ -173,6 +201,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         allUsers,
         loading,
         signIn,
+        signInWithGoogle,
         signUp,
         signOut,
         switchMockUser,

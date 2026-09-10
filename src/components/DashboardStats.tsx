@@ -1,6 +1,7 @@
 import React from 'react';
 import { useRequests } from '../context/RequestContext';
 import type { RequestStatus } from '../types';
+import { WireframeCube } from './WireframeCube';
 
 export const DashboardStats: React.FC = () => {
   const { stats, setFilters, filters } = useRequests();
@@ -24,8 +25,11 @@ export const DashboardStats: React.FC = () => {
   return (
     <div className="mb-8">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="font-bold text-2xl uppercase tracking-widest text-[var(--text-primary)]">Overview</h2>
-        <span className="text-[10px] uppercase tracking-widest text-[var(--text-muted)]">SYSTEM_METRICS</span>
+        <div>
+          <h2 className="font-bold text-2xl uppercase tracking-widest text-[var(--text-primary)]">Overview</h2>
+          <span className="text-[10px] uppercase tracking-widest text-[var(--text-muted)]">SYSTEM_METRICS</span>
+        </div>
+        <WireframeCube />
       </div>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 border-l border-t border-[var(--border-color)] bg-transparent">

@@ -4,6 +4,7 @@ import { RequestProvider } from './context/RequestContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { Navbar } from './components/Navbar';
 import { DashboardStats } from './components/DashboardStats';
+import { DashboardBanner } from './components/DashboardBanner';
 import { FilterBar } from './components/FilterBar';
 import { RequestTable } from './components/RequestTable';
 import { RequestKanban } from './components/RequestKanban';
@@ -21,6 +22,30 @@ const MainDashboard: React.FC = () => {
   const [showClientManager, setShowClientManager] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
 
+  // Global Keyboard Shortcuts: 'N' for new request, '/' to focus search
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if typing in an input, textarea, or select
+      const activeTag = (document.activeElement?.tagName || '').toLowerCase();
+      if (['input', 'textarea', 'select'].includes(activeTag)) return;
+
+      if (e.key === 'n' || e.key === 'N') {
+        e.preventDefault();
+        setShowNewRequest(true);
+      } else if (e.key === '/') {
+        e.preventDefault();
+        const searchInput = document.querySelector('input[placeholder*="SEARCH"]') as HTMLInputElement | null;
+        if (searchInput) {
+          searchInput.focus();
+          searchInput.select();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col bg-grid-pattern text-[var(--text-primary)]">
       <Navbar
@@ -30,6 +55,9 @@ const MainDashboard: React.FC = () => {
       />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-6">
+        {/* Urgent Alert Banner */}
+        <DashboardBanner />
+
         {/* Summary Stats Header */}
         <DashboardStats />
 

@@ -53,26 +53,14 @@ export const RequestDetailDrawer: React.FC = () => {
     setNewCommentText('');
   };
 
-  const handleCopyClientUpdate = () => {
-    const statusLabel = STATUS_CONFIG[selectedRequest.status]?.clientMessageSnippet || selectedRequest.status;
-
-    let text = `Hi ${selectedRequest.client_name}, quick update on '${selectedRequest.title}': this is currently ${statusLabel}.`;
-
-    if (selectedRequest.assigned_user_name) {
-      text += ` Being handled by ${selectedRequest.assigned_user_name}.`;
-    }
-
-    if (selectedRequest.due_date) {
-      text += ` Expected target completion by ${selectedRequest.due_date}.`;
-    }
-
-    navigator.clipboard.writeText(text);
-    setCopiedUpdate(true);
-    setTimeout(() => setCopiedUpdate(false), 3000);
-  };
+  const [updateTemplate, setUpdateTemplate] = useState<'client' | 'escalation'>('client');
 
   const generatedUpdateText = (() => {
     const statusLabel = STATUS_CONFIG[selectedRequest.status]?.clientMessageSnippet || selectedRequest.status;
+
+    if (updateTemplate === 'escalation') {
+      return `[INTERNAL ESCALATION NOTE]\nTask: ${selectedRequest.title} (ID: ${selectedRequest.id})\nClient: ${selectedRequest.client_name}\nStatus: ${statusLabel}\nPriority: ${selectedRequest.priority.toUpperCase()}\nAssigned: ${selectedRequest.assigned_user_name || 'UNASSIGNED'}\nTarget Due: ${selectedRequest.due_date || 'None'}\nAction Required: Urgent team alignment needed to unblock this request.`;
+    }
 
     let text = `Hi ${selectedRequest.client_name}, quick update on '${selectedRequest.title}': this is currently ${statusLabel}.`;
 
@@ -85,6 +73,12 @@ export const RequestDetailDrawer: React.FC = () => {
     }
     return text;
   })();
+
+  const handleCopyClientUpdate = () => {
+    navigator.clipboard.writeText(generatedUpdateText);
+    setCopiedUpdate(true);
+    setTimeout(() => setCopiedUpdate(false), 3000);
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/50 backdrop-blur-[2px]">
@@ -185,36 +179,48 @@ export const RequestDetailDrawer: React.FC = () => {
               </div>
             </div>
 
-            {/* One-Click Client Update Generator */}
+            {/* Expandable Client Update & Escalation Generator */}
             <div className="border border-[var(--border-color)] p-4 bg-transparent space-y-3">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider">
                   <Sparkles className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                  <span>One-Click Client Update Generator</span>
+                  <span>Update Generator</span>
                 </div>
-                <button
-                  onClick={handleCopyClientUpdate}
-                  className="flex items-center gap-1.5 px-3 py-1 text-[10px] font-bold uppercase tracking-wider border border-[var(--border-color)] bg-[var(--text-primary)] text-[var(--bg-primary)] hover:opacity-90 transition cursor-pointer"
-                >
-                  {copiedUpdate ? (
-                    <>
-                      <Check className="w-3 h-3 text-emerald-400" />
-                      <span>COPIED</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-3 h-3" />
-                      <span>COPY MESSAGE</span>
-                    </>
-                  )}
-                </button>
+
+                <div className="flex items-center gap-2">
+                  <select
+                    value={updateTemplate}
+                    onChange={e => setUpdateTemplate(e.target.value as any)}
+                    className="bg-[var(--bg-primary)] border border-[var(--border-color)] px-2 py-1 text-[10px] uppercase tracking-wider text-[var(--text-primary)] focus:outline-none cursor-pointer"
+                  >
+                    <option value="client">Template: Client-Facing Update</option>
+                    <option value="escalation">Template: Internal Escalation Note</option>
+                  </select>
+
+                  <button
+                    onClick={handleCopyClientUpdate}
+                    className="flex items-center gap-1.5 px-3 py-1 text-[10px] font-bold uppercase tracking-wider border border-[var(--border-color)] bg-[var(--text-primary)] text-[var(--bg-primary)] hover:opacity-90 transition cursor-pointer"
+                  >
+                    {copiedUpdate ? (
+                      <>
+                        <Check className="w-3 h-3 text-emerald-400" />
+                        <span>COPIED</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3 h-3" />
+                        <span>COPY</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
 
-              <div className="p-3 border border-[var(--border-color)] bg-[var(--bg-card)] text-xs text-[var(--text-primary)] font-mono select-all">
+              <div className="p-3 border border-[var(--border-color)] bg-[var(--bg-card)] text-xs text-[var(--text-primary)] font-mono whitespace-pre-wrap select-all">
                 {generatedUpdateText}
               </div>
               <p className="text-[9px] uppercase tracking-wider text-[var(--text-muted)]">
-                Formatted snippet ready to paste into Slack, email, or WhatsApp.
+                Formatted snippet ready to paste into Slack, email, WhatsApp, or internal ticket comments.
               </p>
             </div>
 

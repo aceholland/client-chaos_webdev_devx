@@ -366,6 +366,11 @@ export const RequestProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const nowIso = new Date().toISOString();
     const reqId = `req-${Date.now()}`;
 
+    // Auto-set priority to "urgent" if request description or title contains keywords like "urgent", "asap", "immediately"
+    const textToCheck = `${payload.title} ${payload.description || ''}`.toLowerCase();
+    const isUrgentKeyword = /\b(urgent|asap|immediately)\b/i.test(textToCheck);
+    const resolvedPriority: RequestPriority = isUrgentKeyword ? 'urgent' : (payload.priority || 'medium');
+
     const newReq: RequestItem = {
       id: reqId,
       client_id: targetClientId,
@@ -373,7 +378,7 @@ export const RequestProvider: React.FC<{ children: React.ReactNode }> = ({ child
       description: payload.description || '',
       type_of_work: payload.type_of_work || 'General',
       status: 'new',
-      priority: payload.priority || 'medium',
+      priority: resolvedPriority,
       assigned_to: payload.assigned_to || null,
       created_by: activeUser.id,
       due_date: payload.due_date || null,
