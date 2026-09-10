@@ -1,7 +1,6 @@
 import React from 'react';
 import { useRequests } from '../context/RequestContext';
-import { Clock, AlertTriangle, CheckCircle2, ListTodo, ArrowUpRight } from 'lucide-react';
-import { RequestStatus } from '../types';
+import type { RequestStatus } from '../types';
 
 export const DashboardStats: React.FC = () => {
   const { stats, setFilters, filters } = useRequests();
@@ -14,122 +13,143 @@ export const DashboardStats: React.FC = () => {
     }));
   };
 
-  const handleStaleClick = () => {
+  const handleQuickTabClick = (tab: 'waiting_on_us' | 'waiting_on_client' | 'stale') => {
     setFilters(prev => ({
       ...prev,
-      quickTab: prev.quickTab === 'stale' ? 'all' : 'stale',
+      quickTab: prev.quickTab === tab ? 'all' : tab,
       status: 'all',
     }));
   };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      {/* 1. Open Requests Card */}
-      <div 
-        onClick={() => handleStatusCardClick('all')}
-        className="glass-card p-4 rounded-xl cursor-pointer group flex flex-col justify-between"
-      >
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Open</span>
-          <div className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center group-hover:scale-110 transition">
-            <ListTodo className="w-4 h-4" />
-          </div>
-        </div>
-        <div className="mt-3 flex items-baseline justify-between">
-          <span className="text-3xl font-bold text-white tracking-tight">{stats.totalOpen}</span>
-          <span className="text-xs text-indigo-400 font-medium flex items-center">
-            Active Requests <ArrowUpRight className="w-3 h-3 ml-0.5" />
-          </span>
-        </div>
+    <div className="mb-8">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="font-bold text-2xl uppercase tracking-widest text-[var(--text-primary)]">Overview</h2>
+        <span className="text-[10px] uppercase tracking-widest text-[var(--text-muted)]">SYSTEM_METRICS</span>
       </div>
-
-      {/* 2. Overdue / Stale Card */}
-      <div 
-        onClick={handleStaleClick}
-        className={`glass-card p-4 rounded-xl cursor-pointer group flex flex-col justify-between border-l-4 ${
-          stats.staleCount > 0 ? 'border-l-amber-500 bg-amber-950/20' : 'border-l-slate-800'
-        }`}
-      >
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Stale / Overdue</span>
-          <div className={`w-8 h-8 rounded-lg flex items-center justify-center group-hover:scale-110 transition ${
-            stats.staleCount > 0 ? 'bg-amber-500/20 text-amber-400' : 'bg-slate-800 text-slate-400'
-          }`}>
-            <AlertTriangle className="w-4 h-4" />
+      
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 border-l border-t border-[var(--border-color)] bg-transparent">
+        {/* 1. Waiting on Us Card */}
+        <div 
+          onClick={() => handleQuickTabClick('waiting_on_us')}
+          className={`border-r border-b border-[var(--border-color)] p-6 cursor-pointer hover:bg-[var(--text-primary)] hover:text-[var(--bg-primary)] transition-colors flex flex-col justify-between h-40 ${
+            filters.quickTab === 'waiting_on_us' ? 'bg-[var(--text-primary)] text-[var(--bg-primary)]' : 'bg-transparent text-[var(--text-primary)]'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold uppercase tracking-widest">/ WAITING ON US</span>
+            <span className="text-[9px] border border-current px-1 py-0.2">ACTIVE</span>
+          </div>
+          <div className="border-t border-current my-2 opacity-30"></div>
+          <div>
+            <span className="font-bold text-5xl tracking-tight leading-none block">{stats.waitingOnUsCount}</span>
+            <span className="text-[9px] uppercase tracking-wider block mt-1 opacity-70">Requests requiring action</span>
           </div>
         </div>
-        <div className="mt-3 flex items-baseline justify-between">
-          <span className={`text-3xl font-bold tracking-tight ${stats.staleCount > 0 ? 'text-amber-400' : 'text-slate-300'}`}>
-            {stats.staleCount}
-          </span>
-          <span className="text-xs text-slate-400 font-medium">
-            Inactive &gt; 2 Days
-          </span>
-        </div>
-      </div>
 
-      {/* 3. Average Resolution Time */}
-      <div className="glass-card p-4 rounded-xl flex flex-col justify-between">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Avg Resolution Time</span>
-          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
-            <Clock className="w-4 h-4" />
+        {/* 2. Waiting on Client Card */}
+        <div 
+          onClick={() => handleQuickTabClick('waiting_on_client')}
+          className={`border-r border-b border-[var(--border-color)] p-6 cursor-pointer hover:bg-[var(--text-primary)] hover:text-[var(--bg-primary)] transition-colors flex flex-col justify-between h-40 ${
+            filters.quickTab === 'waiting_on_client' ? 'bg-[var(--text-primary)] text-[var(--bg-primary)]' : 'bg-transparent text-[var(--text-primary)]'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold uppercase tracking-widest">/ WAITING ON CLIENT</span>
+            <span className="text-[9px] border border-amber-600 text-amber-600 dark:border-amber-400 dark:text-amber-400 px-1 py-0.2">PENDING</span>
+          </div>
+          <div className="border-t border-current my-2 opacity-30"></div>
+          <div>
+            <span className="font-bold text-5xl tracking-tight leading-none block">{stats.waitingOnClientCount}</span>
+            <span className="text-[9px] uppercase tracking-wider block mt-1 opacity-70">Client info or review needed</span>
           </div>
         </div>
-        <div className="mt-3 flex items-baseline justify-between">
-          <div className="flex items-baseline gap-1">
-            <span className="text-3xl font-bold text-white tracking-tight">{stats.avgResolutionTimeDays}</span>
-            <span className="text-xs text-slate-400 font-medium">days</span>
-          </div>
-          <span className="text-xs text-emerald-400 font-medium flex items-center">
-            Resolved Tasks
-          </span>
-        </div>
-      </div>
 
-      {/* 4. Pipeline Breakdown */}
-      <div className="glass-card p-4 rounded-xl flex flex-col justify-between">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Status Breakdown</span>
-          <CheckCircle2 className="w-4 h-4 text-purple-400" />
+        {/* 3. Overdue / Stale Card */}
+        <div 
+          onClick={() => handleQuickTabClick('stale')}
+          className={`border-r border-b border-[var(--border-color)] p-6 cursor-pointer hover:bg-[var(--text-primary)] hover:text-[var(--bg-primary)] transition-colors flex flex-col justify-between h-40 ${
+            filters.quickTab === 'stale'
+              ? 'bg-[var(--text-primary)] text-[var(--bg-primary)]'
+              : stats.staleCount > 0
+              ? 'bg-transparent text-[var(--text-primary)]'
+              : 'bg-transparent text-[var(--text-primary)]'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold uppercase tracking-widest">/ OVERDUE / STALE</span>
+            <span className="text-[9px] border border-current px-1 py-0.2">&gt;48H INACTIVE</span>
+          </div>
+          <div className="border-t border-current my-2 opacity-30"></div>
+          <div>
+            <span className="font-bold text-5xl tracking-tight leading-none block">{stats.staleCount}</span>
+            <span className="text-[9px] uppercase tracking-wider block mt-1 opacity-70">Stale tasks needing nudge</span>
+          </div>
         </div>
-        <div className="grid grid-cols-2 gap-2 mt-1">
-          <button
-            onClick={() => handleStatusCardClick('new')}
-            className={`px-2 py-1.5 rounded-lg text-xs font-medium flex items-center justify-between transition ${
-              filters.status === 'new' ? 'bg-blue-500/30 text-blue-300 ring-1 ring-blue-500' : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800'
-            }`}
-          >
-            <span>New</span>
-            <span className="font-bold text-blue-400">{stats.statusCounts.new}</span>
-          </button>
-          <button
-            onClick={() => handleStatusCardClick('in_progress')}
-            className={`px-2 py-1.5 rounded-lg text-xs font-medium flex items-center justify-between transition ${
-              filters.status === 'in_progress' ? 'bg-amber-500/30 text-amber-300 ring-1 ring-amber-500' : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800'
-            }`}
-          >
-            <span>In Progress</span>
-            <span className="font-bold text-amber-400">{stats.statusCounts.in_progress}</span>
-          </button>
-          <button
-            onClick={() => handleStatusCardClick('waiting_on_client')}
-            className={`px-2 py-1.5 rounded-lg text-xs font-medium flex items-center justify-between transition ${
-              filters.status === 'waiting_on_client' ? 'bg-purple-500/30 text-purple-300 ring-1 ring-purple-500' : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800'
-            }`}
-          >
-            <span>Waiting</span>
-            <span className="font-bold text-purple-400">{stats.statusCounts.waiting_on_client}</span>
-          </button>
-          <button
-            onClick={() => handleStatusCardClick('done')}
-            className={`px-2 py-1.5 rounded-lg text-xs font-medium flex items-center justify-between transition ${
-              filters.status === 'done' ? 'bg-emerald-500/30 text-emerald-300 ring-1 ring-emerald-500' : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800'
-            }`}
-          >
-            <span>Done</span>
-            <span className="font-bold text-emerald-400">{stats.statusCounts.done}</span>
-          </button>
+
+        {/* 4. 6-Stage Pipeline Breakdown */}
+        <div className="border-r border-b border-[var(--border-color)] p-4 flex flex-col justify-between h-40 bg-transparent text-[var(--text-primary)]">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold uppercase tracking-widest">/ PIPELINE STAGES</span>
+            <span className="text-[9px] opacity-70">TOTAL: {stats.totalOpen}</span>
+          </div>
+          <div className="border-t border-[var(--border-color)] my-1 opacity-30"></div>
+          <div className="grid grid-cols-3 gap-y-2 gap-x-1 w-full text-center">
+            <button
+              onClick={() => handleStatusCardClick('new')}
+              className={`flex flex-col items-center justify-center p-1 border border-[var(--border-color)] transition-colors ${
+                filters.status === 'new' ? 'bg-[var(--text-primary)] text-[var(--bg-primary)] font-bold' : 'hover:bg-[var(--text-primary)] hover:text-[var(--bg-primary)]'
+              }`}
+            >
+              <span className="font-bold text-base leading-tight">{stats.statusCounts.new}</span>
+              <span className="uppercase tracking-widest text-[8px]">New</span>
+            </button>
+            <button
+              onClick={() => handleStatusCardClick('needs_clarification')}
+              className={`flex flex-col items-center justify-center p-1 border border-[var(--border-color)] transition-colors ${
+                filters.status === 'needs_clarification' ? 'bg-[var(--text-primary)] text-[var(--bg-primary)] font-bold' : 'hover:bg-[var(--text-primary)] hover:text-[var(--bg-primary)]'
+              }`}
+            >
+              <span className="font-bold text-base leading-tight">{stats.statusCounts.needs_clarification}</span>
+              <span className="uppercase tracking-widest text-[8px]">Clarify</span>
+            </button>
+            <button
+              onClick={() => handleStatusCardClick('ready_to_assign')}
+              className={`flex flex-col items-center justify-center p-1 border border-[var(--border-color)] transition-colors ${
+                filters.status === 'ready_to_assign' ? 'bg-[var(--text-primary)] text-[var(--bg-primary)] font-bold' : 'hover:bg-[var(--text-primary)] hover:text-[var(--bg-primary)]'
+              }`}
+            >
+              <span className="font-bold text-base leading-tight">{stats.statusCounts.ready_to_assign}</span>
+              <span className="uppercase tracking-widest text-[8px]">Ready</span>
+            </button>
+            <button
+              onClick={() => handleStatusCardClick('in_progress')}
+              className={`flex flex-col items-center justify-center p-1 border border-[var(--border-color)] transition-colors ${
+                filters.status === 'in_progress' ? 'bg-[var(--text-primary)] text-[var(--bg-primary)] font-bold' : 'hover:bg-[var(--text-primary)] hover:text-[var(--bg-primary)]'
+              }`}
+            >
+              <span className="font-bold text-base leading-tight">{stats.statusCounts.in_progress}</span>
+              <span className="uppercase tracking-widest text-[8px]">InProg</span>
+            </button>
+            <button
+              onClick={() => handleStatusCardClick('waiting_on_client')}
+              className={`flex flex-col items-center justify-center p-1 border border-[var(--border-color)] transition-colors ${
+                filters.status === 'waiting_on_client' ? 'bg-[var(--text-primary)] text-[var(--bg-primary)] font-bold' : 'hover:bg-[var(--text-primary)] hover:text-[var(--bg-primary)]'
+              }`}
+            >
+              <span className="font-bold text-base leading-tight">{stats.statusCounts.waiting_on_client}</span>
+              <span className="uppercase tracking-widest text-[8px]">Client</span>
+            </button>
+            <button
+              onClick={() => handleStatusCardClick('done')}
+              className={`flex flex-col items-center justify-center p-1 border border-[var(--border-color)] transition-colors ${
+                filters.status === 'done' ? 'bg-[var(--text-primary)] text-[var(--bg-primary)] font-bold' : 'hover:bg-[var(--text-primary)] hover:text-[var(--bg-primary)]'
+              }`}
+            >
+              <span className="font-bold text-base leading-tight">{stats.statusCounts.done}</span>
+              <span className="uppercase tracking-widest text-[8px]">Done</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>

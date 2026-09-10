@@ -1,4 +1,4 @@
-import { UserProfile, Client, RequestItem, CommentItem, ActivityLogItem } from '../types';
+import type { UserProfile, Client, RequestItem, CommentItem, ActivityLogItem } from '../types';
 
 export const INITIAL_USERS: UserProfile[] = [
   {
@@ -79,7 +79,7 @@ export const INITIAL_REQUESTS: RequestItem[] = [
     due_date: new Date(nowMs + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     created_at: daysAgo(5),
     updated_at: daysAgo(3),
-    // Inactive for 3 days -> Stale!
+    // Inactive for 3 days in 'new' -> Stale!
     last_activity_at: daysAgo(3),
   },
   {
@@ -94,8 +94,9 @@ export const INITIAL_REQUESTS: RequestItem[] = [
     created_by: 'user-admin-1',
     due_date: new Date(nowMs + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     created_at: daysAgo(6),
-    updated_at: daysAgo(0.5),
-    last_activity_at: daysAgo(0.5),
+    updated_at: daysAgo(4),
+    // Inactive for 4 days but status is waiting_on_client -> NOT STALE per new requirement!
+    last_activity_at: daysAgo(4),
   },
   {
     id: 'req-104',
@@ -111,6 +112,36 @@ export const INITIAL_REQUESTS: RequestItem[] = [
     created_at: daysAgo(8),
     updated_at: daysAgo(2),
     last_activity_at: daysAgo(2),
+  },
+  {
+    id: 'req-105',
+    client_id: 'client-1',
+    title: 'Review missing tax exemption forms and specs',
+    description: 'Need clarification from finance lead regarding EU VAT exemption numbers before proceeding.',
+    type_of_work: 'Legal & Tax',
+    status: 'needs_clarification',
+    priority: 'medium',
+    assigned_to: 'user-member-1',
+    created_by: 'user-member-1',
+    due_date: new Date(nowMs + 4 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    created_at: daysAgo(2),
+    updated_at: daysAgo(0.8),
+    last_activity_at: daysAgo(0.8),
+  },
+  {
+    id: 'req-106',
+    client_id: 'client-3',
+    title: 'Security audit and role-based permissions matrix',
+    description: 'Scoped and approved by client. Ready to assign to backend engineering team.',
+    type_of_work: 'DevOps',
+    status: 'ready_to_assign',
+    priority: 'high',
+    assigned_to: null,
+    created_by: 'user-admin-1',
+    due_date: new Date(nowMs + 6 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    created_at: daysAgo(1),
+    updated_at: daysAgo(0.5),
+    last_activity_at: daysAgo(0.5),
   },
 ];
 

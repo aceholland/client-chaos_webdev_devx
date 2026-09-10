@@ -1,7 +1,7 @@
 import React from 'react';
 import { useRequests } from '../context/RequestContext';
 import { useAuth } from '../context/AuthContext';
-import { Bell, AlertTriangle, UserCheck, CheckCircle2, ChevronRight, X } from 'lucide-react';
+import { Bell, AlertTriangle, X } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 interface NotificationsPopoverProps {
@@ -22,23 +22,21 @@ export const NotificationsPopover: React.FC<NotificationsPopoverProps> = ({ onCl
     return hoursAgo <= 48 && r.status !== 'done';
   });
 
-  const totalAlerts = staleAssigned.length + recentAssigned.length;
-
   return (
-    <div className="absolute right-0 mt-2 w-80 sm:w-96 glass-panel rounded-2xl border border-slate-800 shadow-2xl z-50 overflow-hidden animate-fadeIn">
+    <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-[var(--bg-primary)] border border-[var(--border-color)] z-50 overflow-hidden text-[var(--text-primary)]">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800 bg-slate-900/90">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-color)] bg-[var(--bg-card)]">
         <div className="flex items-center gap-2">
-          <Bell className="w-4 h-4 text-indigo-400" />
-          <h3 className="font-bold text-xs text-slate-100 uppercase tracking-wider">In-App Notifications</h3>
+          <Bell className="w-3.5 h-3.5 text-[var(--text-primary)]" />
+          <h3 className="font-bold text-xs uppercase tracking-wider">Notifications</h3>
         </div>
-        <button onClick={onClose} className="text-slate-400 hover:text-white p-1">
-          <X className="w-4 h-4" />
+        <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer">
+          <X className="w-3.5 h-3.5" />
         </button>
       </div>
 
       {/* Body */}
-      <div className="max-h-80 overflow-y-auto divide-y divide-slate-800/60 p-2">
+      <div className="max-h-80 overflow-y-auto divide-y divide-[var(--border-color)] p-2">
         {staleAssigned.map(req => (
           <div
             key={`stale-${req.id}`}
@@ -46,57 +44,56 @@ export const NotificationsPopover: React.FC<NotificationsPopoverProps> = ({ onCl
               setSelectedRequestId(req.id);
               onClose();
             }}
-            className="p-2.5 rounded-xl hover:bg-amber-950/20 cursor-pointer transition flex items-start gap-2.5 group"
+            className="p-2.5 hover:bg-[var(--text-primary)] hover:text-[var(--bg-primary)] cursor-pointer transition flex items-start gap-2.5 group"
           >
-            <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400 mt-0.5 flex-shrink-0">
-              <AlertTriangle className="w-3.5 h-3.5" />
+            <div className="p-1 border border-current mt-0.5 shrink-0">
+              <AlertTriangle className="w-3 h-3" />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase text-amber-400">Stale Task Alert</span>
-                <span className="text-[10px] text-slate-500">
+                <span className="text-[9px] font-bold uppercase tracking-wider">STALE TASK (&gt;48H)</span>
+                <span className="text-[8px] opacity-75">
                   {formatDistanceToNow(new Date(req.last_activity_at), { addSuffix: true })}
                 </span>
               </div>
-              <p className="text-xs font-semibold text-slate-200 truncate group-hover:text-amber-300">
+              <p className="text-xs font-bold uppercase truncate">
                 {req.title}
               </p>
-              <p className="text-[11px] text-slate-400">No activity for over 48 hours.</p>
+              <p className="text-[9px] uppercase tracking-wider opacity-75">Requires internal update or review.</p>
             </div>
           </div>
         ))}
 
         {recentAssigned.map(req => (
           <div
-            key={`assigned-${req.id}`}
+            key={`recent-${req.id}`}
             onClick={() => {
               setSelectedRequestId(req.id);
               onClose();
             }}
-            className="p-2.5 rounded-xl hover:bg-slate-800/60 cursor-pointer transition flex items-start gap-2.5 group"
+            className="p-2.5 hover:bg-[var(--text-primary)] hover:text-[var(--bg-primary)] cursor-pointer transition flex items-start gap-2.5 group"
           >
-            <div className="p-1.5 rounded-lg bg-indigo-500/20 text-indigo-400 mt-0.5 flex-shrink-0">
-              <UserCheck className="w-3.5 h-3.5" />
+            <div className="p-1 border border-current mt-0.5 shrink-0">
+              <Bell className="w-3 h-3" />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase text-indigo-400">Assigned To You</span>
-                <span className="text-[10px] text-slate-500">
+                <span className="text-[9px] font-bold uppercase tracking-wider">ASSIGNED TO YOU</span>
+                <span className="text-[8px] opacity-75">
                   {formatDistanceToNow(new Date(req.created_at), { addSuffix: true })}
                 </span>
               </div>
-              <p className="text-xs font-semibold text-slate-200 truncate group-hover:text-indigo-300">
+              <p className="text-xs font-bold uppercase truncate">
                 {req.title}
               </p>
-              <p className="text-[11px] text-slate-400">Client: {req.client_name}</p>
+              <p className="text-[9px] uppercase tracking-wider opacity-75">{req.client_name} • {req.priority}</p>
             </div>
           </div>
         ))}
 
-        {totalAlerts === 0 && (
-          <div className="py-8 text-center text-xs text-slate-500">
-            <CheckCircle2 className="w-6 h-6 mx-auto mb-2 text-emerald-400/60" />
-            No new task assignments or stale alerts!
+        {staleAssigned.length === 0 && recentAssigned.length === 0 && (
+          <div className="text-center py-6 text-xs text-[var(--text-muted)] uppercase tracking-wider">
+            No active notifications
           </div>
         )}
       </div>

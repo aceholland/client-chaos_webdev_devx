@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useRequests } from '../context/RequestContext';
 import { useAuth } from '../context/AuthContext';
-import { RequestPriority } from '../types';
-import { X, Sparkles, Plus, Building2, Calendar, User, Tag } from 'lucide-react';
+import type { RequestPriority } from '../types';
+import { X } from 'lucide-react';
 
 interface NewRequestModalProps {
   onClose: () => void;
@@ -81,64 +81,56 @@ export const NewRequestModal: React.FC<NewRequestModalProps> = ({ onClose }) => 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
-      <div className="glass-panel w-full max-w-xl rounded-2xl border border-slate-800 shadow-2xl overflow-hidden">
-        {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/90">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center">
-              <Sparkles className="w-4 h-4" />
-            </div>
-            <div>
-              <h2 className="font-bold text-base text-slate-100">Create Client Request</h2>
-              <p className="text-xs text-slate-400">Add a new task intake for client tracking</p>
-            </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-[2px]">
+      <div className="w-full max-w-2xl bg-[var(--bg-primary)] border border-[var(--border-color)] overflow-hidden text-[var(--text-primary)]">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border-color)] bg-[var(--bg-card)]">
+          <div>
+            <h2 className="font-bold text-base uppercase tracking-widest text-[var(--text-primary)]">New Client Request</h2>
+            <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mt-0.5">INTAKE REGISTRATION</p>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition"
+            className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1.5 border border-transparent hover:border-[var(--border-color)] transition-colors cursor-pointer"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Modal Form */}
+        {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
           {errorMsg && (
-            <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-400">
+            <div className="p-3 border border-red-500 bg-red-500/10 text-red-600 dark:text-red-400 text-xs uppercase tracking-wider font-bold">
               {errorMsg}
             </div>
           )}
 
           {/* Client Selection */}
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-                <Building2 className="w-3.5 h-3.5 text-indigo-400" /> Client Organization *
-              </label>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Client</label>
               <button
                 type="button"
                 onClick={() => setIsNewClient(!isNewClient)}
-                className="text-xs text-indigo-400 hover:text-indigo-300 font-medium flex items-center gap-1"
+                className="text-[10px] uppercase tracking-wider text-[var(--text-primary)] underline cursor-pointer"
               >
-                {isNewClient ? 'Select Existing Client' : '+ Create New Client'}
+                {isNewClient ? 'SELECT EXISTING CLIENT' : '+ CREATE NEW CLIENT'}
               </button>
             </div>
 
             {isNewClient ? (
               <input
                 type="text"
-                placeholder="Enter client company name (e.g. Acme Corp)"
+                placeholder="ENTER CLIENT COMPANY NAME..."
                 value={newClientName}
                 onChange={e => setNewClientName(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-100 focus:border-indigo-500 focus:outline-none"
-                required
+                className="w-full bg-[var(--bg-primary)] border border-[var(--border-color)] px-3 py-2 text-xs uppercase tracking-wider text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none"
               />
             ) : (
               <select
                 value={clientId}
                 onChange={e => setClientId(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-100 focus:border-indigo-500 focus:outline-none"
+                className="w-full bg-[var(--bg-primary)] border border-[var(--border-color)] px-3 py-2 text-xs uppercase tracking-wider text-[var(--text-primary)] focus:outline-none cursor-pointer"
               >
                 {clients.map(c => (
                   <option key={c.id} value={c.id}>
@@ -149,96 +141,82 @@ export const NewRequestModal: React.FC<NewRequestModalProps> = ({ onClose }) => 
             )}
           </div>
 
-          {/* Title */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-              Request Title *
-            </label>
+          {/* Request Title */}
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Request Title *</label>
             <input
               type="text"
-              placeholder="e.g. Fix checkout payment webhook timeout"
+              placeholder="E.G. DATA PIPELINE INTEGRATION ERROR"
               value={title}
               onChange={e => setTitle(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-100 focus:border-indigo-500 focus:outline-none"
+              className="w-full bg-[var(--bg-primary)] border border-[var(--border-color)] px-3 py-2 text-xs uppercase tracking-wider text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none"
               required
             />
           </div>
 
           {/* Description */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-              Detailed Description *
-            </label>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Description</label>
             <textarea
               rows={3}
-              placeholder="Describe background context, WhatsApp/email notes, or specific requirements..."
+              placeholder="DETAILED SPECS, LOGS, LINKS..."
               value={description}
               onChange={e => setDescription(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-100 focus:border-indigo-500 focus:outline-none"
-              required
+              className="w-full bg-[var(--bg-primary)] border border-[var(--border-color)] px-3 py-2 text-xs uppercase tracking-wider text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none"
             />
           </div>
 
           {/* Grid: Type of Work & Priority */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Type of Work */}
-            <div>
-              <label className="text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
-                <Tag className="w-3.5 h-3.5 text-indigo-400" /> Type of Work *
-              </label>
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Type of Work</label>
               <select
                 value={typeOfWork}
                 onChange={e => setTypeOfWork(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-100 focus:border-indigo-500 focus:outline-none"
+                className="w-full bg-[var(--bg-primary)] border border-[var(--border-color)] px-3 py-2 text-xs uppercase tracking-wider text-[var(--text-primary)] focus:outline-none cursor-pointer"
               >
                 {PREDEFINED_TYPES.map(t => (
                   <option key={t} value={t}>
-                    {t}
+                    {t.toUpperCase()}
                   </option>
                 ))}
               </select>
               {typeOfWork === 'Custom Tag' && (
                 <input
                   type="text"
-                  placeholder="Enter custom work category..."
+                  placeholder="CUSTOM TAG NAME..."
                   value={customType}
                   onChange={e => setCustomType(e.target.value)}
-                  className="mt-2 w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-100"
+                  className="w-full bg-[var(--bg-primary)] border border-[var(--border-color)] px-3 py-1.5 text-xs uppercase tracking-wider text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none mt-1"
                 />
               )}
             </div>
 
-            {/* Priority */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                Priority Level
-              </label>
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Priority</label>
               <select
                 value={priority}
                 onChange={e => setPriority(e.target.value as RequestPriority)}
-                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-100 focus:border-indigo-500 focus:outline-none"
+                className="w-full bg-[var(--bg-primary)] border border-[var(--border-color)] px-3 py-2 text-xs uppercase tracking-wider text-[var(--text-primary)] focus:outline-none cursor-pointer"
               >
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-                <option value="urgent">Urgent</option>
+                <option value="urgent">URGENT</option>
+                <option value="high">HIGH</option>
+                <option value="medium">MEDIUM</option>
+                <option value="low">LOW</option>
               </select>
             </div>
           </div>
 
           {/* Grid: Assignee & Due Date */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Assigned To */}
-            <div>
-              <label className="text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
-                <User className="w-3.5 h-3.5 text-indigo-400" /> Assign Responsibility
-              </label>
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Assign To</label>
               <select
                 value={assignedTo}
                 onChange={e => setAssignedTo(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-100 focus:border-indigo-500 focus:outline-none"
+                className="w-full bg-[var(--bg-primary)] border border-[var(--border-color)] px-3 py-2 text-xs uppercase tracking-wider text-[var(--text-primary)] focus:outline-none cursor-pointer"
               >
-                <option value="">Leave Unassigned</option>
+                <option value="">UNASSIGNED</option>
                 {allUsers.map(u => (
                   <option key={u.id} value={u.id}>
                     {u.name} ({u.role})
@@ -247,33 +225,30 @@ export const NewRequestModal: React.FC<NewRequestModalProps> = ({ onClose }) => 
               </select>
             </div>
 
-            {/* Due Date */}
-            <div>
-              <label className="text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-indigo-400" /> Target Target Due Date
-              </label>
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Due Date</label>
               <input
                 type="date"
                 value={dueDate}
                 onChange={e => setDueDate(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-100 focus:border-indigo-500 focus:outline-none"
+                className="w-full bg-[var(--bg-primary)] border border-[var(--border-color)] px-3 py-2 text-xs uppercase tracking-wider text-[var(--text-primary)] focus:outline-none"
               />
             </div>
           </div>
 
-          {/* Submit Actions */}
-          <div className="pt-4 border-t border-slate-800 flex items-center justify-end gap-3">
+          {/* Footer Actions */}
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-[var(--border-color)]">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 transition"
+              className="px-4 py-2 border border-[var(--border-color)] bg-transparent text-[var(--text-primary)] text-xs uppercase tracking-wider hover:bg-[var(--text-primary)] hover:text-[var(--bg-primary)] transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="px-5 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold text-xs shadow-lg shadow-indigo-600/20 transition disabled:opacity-50"
+              className="px-6 py-2 border border-[var(--border-color)] bg-[var(--text-primary)] text-[var(--bg-primary)] text-xs font-bold uppercase tracking-wider hover:opacity-90 transition cursor-pointer"
             >
               {submitting ? 'Creating...' : 'Create Request'}
             </button>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useRequests } from '../context/RequestContext';
-import { X, Building2, Plus, Users } from 'lucide-react';
+import { X, Plus } from 'lucide-react';
 
 interface ClientManagerModalProps {
   onClose: () => void;
@@ -29,77 +29,68 @@ export const ClientManagerModal: React.FC<ClientManagerModalProps> = ({ onClose 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
-      <div className="glass-panel w-full max-w-md rounded-2xl border border-slate-800 shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-[2px]">
+      <div className="w-full max-w-md bg-[var(--bg-primary)] border border-[var(--border-color)] overflow-hidden text-[var(--text-primary)]">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800 bg-slate-900/90">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center">
-              <Building2 className="w-4 h-4" />
-            </div>
-            <div>
-              <h2 className="font-bold text-sm text-slate-100">Manage Client Accounts</h2>
-              <p className="text-[11px] text-slate-400">Lala Tech Client Directory</p>
-            </div>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border-color)] bg-[var(--bg-card)]">
+          <div>
+            <h2 className="font-bold text-base uppercase tracking-widest text-[var(--text-primary)]">Manage Clients</h2>
+            <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mt-0.5">CLIENT DIRECTORY</p>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition"
+            className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1.5 border border-transparent hover:border-[var(--border-color)] transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Content Body */}
-        <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
+        <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
           {/* Add Client Form */}
-          <form onSubmit={handleAddClient} className="flex gap-2">
+          <form onSubmit={handleAddClient} className="flex border border-[var(--border-color)] bg-[var(--bg-primary)]">
             <input
               type="text"
-              placeholder="Add client company name..."
+              placeholder="ADD CLIENT COMPANY NAME..."
               value={newClientName}
               onChange={e => setNewClientName(e.target.value)}
-              className="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:border-indigo-500 focus:outline-none"
+              className="flex-1 bg-transparent px-3 py-2 text-xs uppercase tracking-wider text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none"
             />
             <button
               type="submit"
               disabled={loading || !newClientName.trim()}
-              className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs transition flex items-center gap-1 disabled:opacity-50"
+              className="px-4 py-2 bg-[var(--text-primary)] text-[var(--bg-primary)] text-xs font-bold uppercase tracking-wider hover:opacity-90 disabled:opacity-40 transition-colors flex items-center gap-1 cursor-pointer"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-3.5 h-3.5" />
               <span>Add</span>
             </button>
           </form>
 
           {errorMsg && (
-            <div className="p-2.5 rounded-lg bg-red-500/10 text-red-400 text-xs border border-red-500/20">
-              {errorMsg}
-            </div>
+            <p className="text-xs text-red-500 uppercase tracking-wider font-bold">{errorMsg}</p>
           )}
 
           {/* Client List */}
-          <div className="space-y-2 pt-2 border-t border-slate-800">
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
+          <div className="space-y-2">
+            <h3 className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
               Registered Clients ({clients.length})
-            </span>
-
-            <div className="space-y-1.5">
-              {clients.map(c => {
-                const count = requests.filter(r => r.client_id === c.id).length;
-
+            </h3>
+            <div className="divide-y divide-[var(--border-color)] border border-[var(--border-color)]">
+              {clients.map(client => {
+                const clientReqCount = requests.filter(r => r.client_id === client.id).length;
                 return (
                   <div
-                    key={c.id}
-                    className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900/60 border border-slate-800/80 hover:border-slate-700 transition"
+                    key={client.id}
+                    className="p-3 flex items-center justify-between hover:bg-[var(--text-primary)]/5 transition-colors text-xs"
                   >
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-md bg-slate-800 text-indigo-400 flex items-center justify-center text-xs font-bold">
-                        {c.name.charAt(0)}
-                      </div>
-                      <span className="text-xs font-semibold text-slate-200">{c.name}</span>
+                    <div>
+                      <h4 className="font-bold uppercase tracking-wider">{client.name}</h4>
+                      <p className="text-[9px] uppercase tracking-wider text-[var(--text-muted)] mt-0.5">
+                        {clientReqCount} active requests
+                      </p>
                     </div>
-                    <span className="text-[11px] text-slate-400 font-medium px-2 py-0.5 rounded bg-slate-800">
-                      {count} {count === 1 ? 'request' : 'requests'}
+                    <span className="text-[9px] border border-[var(--border-color)] px-1.5 py-0.5 uppercase tracking-widest">
+                      ACTIVE
                     </span>
                   </div>
                 );

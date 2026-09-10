@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useRequests } from '../context/RequestContext';
 import { useAuth } from '../context/AuthContext';
-import { RequestPriority, RequestStatus } from '../types';
-import { CheckSquare, User, Trash2, X, ArrowRight, ShieldAlert } from 'lucide-react';
+import type { RequestStatus } from '../types';
+import { CheckSquare, Trash2, X } from 'lucide-react';
 
 interface BulkActionBarProps {
   selectedIds: string[];
@@ -39,77 +39,79 @@ export const BulkActionBar: React.FC<BulkActionBarProps> = ({
   };
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-11/12 max-w-3xl glass-panel rounded-2xl p-3 border border-indigo-500/40 shadow-2xl animate-bounce-subtle flex flex-wrap items-center justify-between gap-3">
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-11/12 max-w-4xl bg-[var(--bg-primary)] border border-[var(--border-color)] p-3 flex flex-wrap items-center justify-between gap-3 text-[var(--text-primary)]">
       {/* Selected Counter */}
-      <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 text-xs font-bold">
-        <CheckSquare className="w-4 h-4 text-indigo-400" />
+      <div className="flex items-center gap-1.5 px-2.5 py-1 border border-[var(--border-color)] bg-[var(--text-primary)] text-[var(--bg-primary)] text-[10px] font-bold uppercase tracking-widest">
+        <CheckSquare className="w-3 h-3" />
         <span>{selectedIds.length} Selected</span>
       </div>
 
       {/* Actions */}
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center gap-2">
         {/* Bulk Status Update */}
-        <div className="flex items-center gap-1 bg-slate-900 border border-slate-800 rounded-xl p-1 text-xs">
+        <div className="flex items-center gap-1.5 border border-[var(--border-color)] p-1 bg-[var(--bg-card)]">
           <select
             value={bulkStatus}
             onChange={e => setBulkStatus(e.target.value as RequestStatus)}
-            className="bg-transparent text-slate-200 px-2 py-1 focus:outline-none cursor-pointer"
+            className="bg-transparent text-[var(--text-primary)] text-[10px] font-bold uppercase tracking-wider px-2 py-1 focus:outline-none cursor-pointer"
           >
-            <option value="new" className="bg-slate-900">Status: New</option>
-            <option value="in_progress" className="bg-slate-900">Status: In Progress</option>
-            <option value="waiting_on_client" className="bg-slate-900">Status: Waiting</option>
-            <option value="done" className="bg-slate-900">Status: Done</option>
+            <option value="new">Status: New</option>
+            <option value="needs_clarification">Status: Clarify</option>
+            <option value="ready_to_assign">Status: Ready</option>
+            <option value="in_progress">Status: In Prog</option>
+            <option value="waiting_on_client">Status: Client</option>
+            <option value="done">Status: Done</option>
           </select>
           <button
             onClick={handleApplyStatus}
-            className="px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition text-[11px]"
+            className="px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider bg-[var(--text-primary)] text-[var(--bg-primary)] hover:opacity-90 transition cursor-pointer"
           >
-            Set Status
+            Apply
           </button>
         </div>
 
         {/* Bulk Reassign */}
-        <div className="flex items-center gap-1 bg-slate-900 border border-slate-800 rounded-xl p-1 text-xs">
+        <div className="flex items-center gap-1.5 border border-[var(--border-color)] p-1 bg-[var(--bg-card)]">
           <select
             value={bulkAssignee}
             onChange={e => setBulkAssignee(e.target.value)}
-            className="bg-transparent text-slate-200 px-2 py-1 focus:outline-none cursor-pointer"
+            className="bg-transparent text-[var(--text-primary)] text-[10px] font-bold uppercase tracking-wider px-2 py-1 focus:outline-none cursor-pointer"
           >
-            <option value="" className="bg-slate-900">Unassigned</option>
+            <option value="">Assignee: Unassigned</option>
             {allUsers.map(u => (
-              <option key={u.id} value={u.id} className="bg-slate-900">
-                {u.name}
+              <option key={u.id} value={u.id}>
+                Assign: {u.name}
               </option>
             ))}
           </select>
           <button
             onClick={handleApplyReassign}
-            className="px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition text-[11px]"
+            className="px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider bg-[var(--text-primary)] text-[var(--bg-primary)] hover:opacity-90 transition cursor-pointer"
           >
-            Reassign
+            Assign
           </button>
         </div>
 
-        {/* Bulk Delete for Admin */}
+        {/* Admin Bulk Delete */}
         {user?.role === 'admin' && (
           <button
             onClick={handleDelete}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 text-xs font-semibold transition"
-            title="Admin Bulk Delete"
+            className="flex items-center gap-1 px-2.5 py-1.5 border border-red-600 text-red-600 hover:bg-red-600 hover:text-white text-[10px] font-bold uppercase tracking-wider transition cursor-pointer"
+            title="Delete Selected Requests"
           >
-            <Trash2 className="w-3.5 h-3.5" />
-            <span>Delete</span>
+            <Trash2 className="w-3 h-3" />
+            <span className="hidden sm:inline">Delete</span>
           </button>
         )}
       </div>
 
-      {/* Clear Button */}
+      {/* Close Selection */}
       <button
         onClick={clearSelection}
-        className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition"
-        title="Clear Selection"
+        className="p-1.5 border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer"
+        title="Deselect all"
       >
-        <X className="w-4 h-4" />
+        <X className="w-3.5 h-3.5" />
       </button>
     </div>
   );

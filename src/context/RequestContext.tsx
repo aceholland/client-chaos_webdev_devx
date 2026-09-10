@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
-import {
+import type {
   RequestItem,
   Client,
   CommentItem,
@@ -73,9 +73,19 @@ const DEFAULT_FILTERS: RequestFilters = {
   sortOrder: 'desc',
 };
 
-// Helper: Check if task is stale (> 2 days / 48h without activity & status != 'done')
+// Helper: Check if task is stale (> 2 days / 48h without activity & status in new, needs_clarification, ready_to_assign, in_progress)
 export const checkIsStale = (request: { status: RequestStatus; last_activity_at: string }): boolean => {
-  if (request.status === 'done') return false;
+  const staleEligibleStatuses: RequestStatus[] = [
+    'new',
+    'needs_clarification',
+    'ready_to_assign',
+    'in_progress',
+  ];
+
+  if (!staleEligibleStatuses.includes(request.status)) {
+    return false;
+  }
+
   const lastActMs = new Date(request.last_activity_at).getTime();
   const nowMs = Date.now();
   const twoDaysMs = 48 * 60 * 60 * 1000;
@@ -178,22 +188,48 @@ export const RequestProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // Compute Dashboard Summary Stats
   const stats: DashboardStats = useMemo(() => {
     let totalOpen = 0;
+    let waitingOnUsCount = 0;
+    let waitingOnClientCount = 0;
+    let unassignedCount = 0;
     let staleCount = 0;
     let totalResolutionDays = 0;
     let doneCount = 0;
 
     const statusCounts: Record<RequestStatus, number> = {
       new: 0,
+      needs_clarification: 0,
+      ready_to_assign: 0,
       in_progress: 0,
       waiting_on_client: 0,
       done: 0,
     };
 
+    const waitingOnUsStatuses: RequestStatus[] = [
+      'new',
+      'needs_clarification',
+      'ready_to_assign',
+      'in_progress',
+    ];
+
     requests.forEach(r => {
-      statusCounts[r.status] = (statusCounts[r.status] || 0) + 1;
+      if (statusCounts[r.status] !== undefined) {
+        statusCounts[r.status] += 1;
+      }
+      
       if (r.status !== 'done') {
         totalOpen += 1;
-        if (r.is_stale) staleCount += 1;
+        if (waitingOnUsStatuses.includes(r.status)) {
+          waitingOnUsCount += 1;
+        }
+        if (r.status === 'waiting_on_client') {
+          waitingOnClientCount += 1;
+        }
+        if (!r.assigned_to) {
+          unassignedCount += 1;
+        }
+        if (r.is_stale) {
+          staleCount += 1;
+        }
       } else {
         doneCount += 1;
         const createdMs = new Date(r.created_at).getTime();
@@ -207,6 +243,9 @@ export const RequestProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     return {
       totalOpen,
+      waitingOnUsCount,
+      waitingOnClientCount,
+      unassignedCount,
       staleCount,
       avgResolutionTimeDays,
       statusCounts,
@@ -217,6 +256,16 @@ export const RequestProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const filteredRequests = useMemo(() => {
     return requests.filter(r => {
       // Quick Tab Filter
+      if (filters.quickTab === 'waiting_on_us') {
+        const waitingOnUsStatuses: RequestStatus[] = [
+          'new',
+          'needs_clarification',
+          'ready_to_assign',
+          'in_progress',
+        ];
+        if (!waitingOnUsStatuses.includes(r.status)) return false;
+      }
+      if (filters.quickTab === 'waiting_on_client' && r.status !== 'waiting_on_client') return false;
       if (filters.quickTab === 'mine' && r.assigned_to !== user?.id) return false;
       if (filters.quickTab === 'unassigned' && r.assigned_to !== null) return false;
       if (filters.quickTab === 'stale' && !r.is_stale) return false;
@@ -303,7 +352,8 @@ export const RequestProvider: React.FC<{ children: React.ReactNode }> = ({ child
     assigned_to?: string | null;
     due_date?: string | null;
   }): Promise<string> => {
-    if (!user) throw new Error('Must be logged in');
+    const activeUser = user || allUsers[0];
+    if (!activeUser) throw new Error('Must be logged in');
 
     let targetClientId = payload.client_id;
     if (!targetClientId && payload.new_client_name) {
@@ -325,7 +375,7 @@ export const RequestProvider: React.FC<{ children: React.ReactNode }> = ({ child
       status: 'new',
       priority: payload.priority || 'medium',
       assigned_to: payload.assigned_to || null,
-      created_by: user.id,
+      created_by: activeUser.id,
       due_date: payload.due_date || null,
       created_at: nowIso,
       updated_at: nowIso,
@@ -335,90 +385,105 @@ export const RequestProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const newLog: ActivityLogItem = {
       id: `act-${Date.now()}`,
       request_id: reqId,
-      user_id: user.id,
+      user_id: activeUser.id,
       action: 'created',
       old_value: null,
       new_value: `Created request "${payload.title}"`,
       created_at: nowIso,
     };
 
+    // Optimistically update local state immediately
+    setRawRequests(prev => [newReq, ...prev]);
+    setActivityLogs(prev => [newLog, ...prev]);
+
     if (isSupabaseConfigured) {
-      const { data: dbReq, error } = await supabase.from('requests').insert({
-        client_id: targetClientId,
-        title: payload.title,
-        description: payload.description,
-        type_of_work: payload.type_of_work,
-        priority: payload.priority || 'medium',
-        assigned_to: payload.assigned_to || null,
-        created_by: user.id,
-        due_date: payload.due_date || null,
-      }).select().single();
+      try {
+        const { data: dbReq, error } = await supabase.from('requests').insert({
+          client_id: targetClientId,
+          title: payload.title,
+          description: payload.description,
+          type_of_work: payload.type_of_work,
+          priority: payload.priority || 'medium',
+          assigned_to: payload.assigned_to || null,
+          created_by: activeUser.id,
+          due_date: payload.due_date || null,
+        }).select().single();
 
-      if (error) throw error;
+        if (error) throw error;
 
-      await supabase.from('activity_log').insert({
-        request_id: dbReq.id,
-        user_id: user.id,
-        action: 'created',
-        new_value: `Created request "${payload.title}"`,
-      });
+        // Replace temporary ID with DB ID
+        setRawRequests(prev => prev.map(r => r.id === reqId ? (dbReq as RequestItem) : r));
 
-      return dbReq.id;
+        await supabase.from('activity_log').insert({
+          request_id: dbReq.id,
+          user_id: activeUser.id,
+          action: 'created',
+          new_value: `Created request "${payload.title}"`,
+        });
+
+        return dbReq.id;
+      } catch (err) {
+        console.error('Failed to create request in Supabase:', err);
+        return reqId;
+      }
     } else {
-      setRawRequests(prev => [newReq, ...prev]);
-      setActivityLogs(prev => [newLog, ...prev]);
       return reqId;
     }
   };
 
   const updateRequestStatus = async (requestId: string, newStatus: RequestStatus) => {
-    if (!user) return;
+    const activeUser = user || allUsers[0];
     const target = rawRequests.find(r => r.id === requestId);
     if (!target || target.status === newStatus) return;
 
-    const oldStatusLabel = target.status.replace('_', ' ');
-    const newStatusLabel = newStatus.replace('_', ' ');
+    const oldStatusLabel = target.status.replace(/_/g, ' ');
+    const newStatusLabel = newStatus.replace(/_/g, ' ');
     const nowIso = new Date().toISOString();
 
     const logEntry: ActivityLogItem = {
       id: `act-${Date.now()}`,
       request_id: requestId,
-      user_id: user.id,
+      user_id: activeUser ? activeUser.id : 'unknown',
       action: 'status_changed',
       old_value: oldStatusLabel,
       new_value: newStatusLabel,
       created_at: nowIso,
     };
 
-    if (isSupabaseConfigured) {
-      await supabase.from('requests').update({
+    // Optimistically update local state immediately
+    setRawRequests(prev =>
+      prev.map(r => r.id === requestId ? {
+        ...r,
         status: newStatus,
         updated_at: nowIso,
         last_activity_at: nowIso,
-      }).eq('id', requestId);
+      } : r)
+    );
+    setActivityLogs(prev => [logEntry, ...prev]);
 
-      await supabase.from('activity_log').insert({
-        request_id: requestId,
-        user_id: user.id,
-        action: 'status_changed',
-        old_value: oldStatusLabel,
-        new_value: newStatusLabel,
-      });
-    } else {
-      setRawRequests(prev =>
-        prev.map(r => r.id === requestId ? {
-          ...r,
+    if (isSupabaseConfigured && activeUser) {
+      try {
+        await supabase.from('requests').update({
           status: newStatus,
           updated_at: nowIso,
           last_activity_at: nowIso,
-        } : r)
-      );
-      setActivityLogs(prev => [logEntry, ...prev]);
+        }).eq('id', requestId);
+
+        await supabase.from('activity_log').insert({
+          request_id: requestId,
+          user_id: activeUser.id,
+          action: 'status_changed',
+          old_value: oldStatusLabel,
+          new_value: newStatusLabel,
+        });
+      } catch (err) {
+        console.error('Failed to update request status in Supabase:', err);
+      }
     }
   };
 
   const reassignRequest = async (requestId: string, newAssigneeId: string | null) => {
-    if (!user) return;
+    const activeUser = user || allUsers[0];
     const target = rawRequests.find(r => r.id === requestId);
     if (!target || target.assigned_to === newAssigneeId) return;
 
@@ -429,62 +494,71 @@ export const RequestProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const logEntry: ActivityLogItem = {
       id: `act-${Date.now()}`,
       request_id: requestId,
-      user_id: user.id,
+      user_id: activeUser ? activeUser.id : 'unknown',
       action: 'reassigned',
       old_value: oldUser,
       new_value: newUser,
       created_at: nowIso,
     };
 
-    if (isSupabaseConfigured) {
-      await supabase.from('requests').update({
+    // Optimistic update
+    setRawRequests(prev =>
+      prev.map(r => r.id === requestId ? {
+        ...r,
         assigned_to: newAssigneeId,
         updated_at: nowIso,
         last_activity_at: nowIso,
-      }).eq('id', requestId);
+      } : r)
+    );
+    setActivityLogs(prev => [logEntry, ...prev]);
 
-      await supabase.from('activity_log').insert({
-        request_id: requestId,
-        user_id: user.id,
-        action: 'reassigned',
-        old_value: oldUser,
-        new_value: newUser,
-      });
-    } else {
-      setRawRequests(prev =>
-        prev.map(r => r.id === requestId ? {
-          ...r,
+    if (isSupabaseConfigured && activeUser) {
+      try {
+        await supabase.from('requests').update({
           assigned_to: newAssigneeId,
           updated_at: nowIso,
           last_activity_at: nowIso,
-        } : r)
-      );
-      setActivityLogs(prev => [logEntry, ...prev]);
+        }).eq('id', requestId);
+
+        await supabase.from('activity_log').insert({
+          request_id: requestId,
+          user_id: activeUser.id,
+          action: 'reassigned',
+          old_value: oldUser,
+          new_value: newUser,
+        });
+      } catch (err) {
+        console.error('Failed to update assignee in Supabase:', err);
+      }
     }
   };
 
   const updateRequestDetails = async (requestId: string, updates: Partial<RequestItem>) => {
-    if (!user) return;
     const target = rawRequests.find(r => r.id === requestId);
     if (!target) return;
 
     const nowIso = new Date().toISOString();
 
-    if (isSupabaseConfigured) {
-      await supabase.from('requests').update({
+    // Optimistic update
+    setRawRequests(prev =>
+      prev.map(r => r.id === requestId ? {
+        ...r,
         ...updates,
         updated_at: nowIso,
         last_activity_at: nowIso,
-      }).eq('id', requestId);
-    } else {
-      setRawRequests(prev =>
-        prev.map(r => r.id === requestId ? {
-          ...r,
+      } : r)
+    );
+
+    if (isSupabaseConfigured) {
+      try {
+        await supabase.from('requests').update({
           ...updates,
           updated_at: nowIso,
           last_activity_at: nowIso,
-        } : r)
-      );
+        }).eq('id', requestId);
+      } catch (err) {
+        console.error('Failed to update request details in Supabase:', err);
+      }
     }
   };
 

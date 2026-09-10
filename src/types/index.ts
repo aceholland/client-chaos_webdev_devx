@@ -14,7 +14,14 @@ export interface Client {
   created_at: string;
 }
 
-export type RequestStatus = 'new' | 'in_progress' | 'waiting_on_client' | 'done';
+export type RequestStatus =
+  | 'new'
+  | 'needs_clarification'
+  | 'ready_to_assign'
+  | 'in_progress'
+  | 'waiting_on_client'
+  | 'done';
+
 export type RequestPriority = 'low' | 'medium' | 'high' | 'urgent';
 
 export interface RequestItem {
@@ -64,10 +71,12 @@ export interface ActivityLogItem {
   user_name?: string;
 }
 
+export type QuickTabType = 'all' | 'waiting_on_us' | 'waiting_on_client' | 'mine' | 'unassigned' | 'stale';
+
 export interface RequestFilters {
   status: RequestStatus | 'all';
   priority: RequestPriority | 'all';
-  quickTab: 'all' | 'mine' | 'unassigned' | 'stale';
+  quickTab: QuickTabType;
   client_id: string | 'all';
   searchQuery: string;
   dateStart: string;
@@ -88,6 +97,9 @@ export interface NotificationItem {
 
 export interface DashboardStats {
   totalOpen: number;
+  waitingOnUsCount: number;
+  waitingOnClientCount: number;
+  unassignedCount: number;
   staleCount: number;
   avgResolutionTimeDays: number;
   statusCounts: Record<RequestStatus, number>;

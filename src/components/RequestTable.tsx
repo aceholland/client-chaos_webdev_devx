@@ -1,7 +1,8 @@
 import React from 'react';
 import { useRequests } from '../context/RequestContext';
 import { useAuth } from '../context/AuthContext';
-import { RequestItem, RequestPriority, RequestStatus } from '../types';
+import type { RequestItem, RequestStatus } from '../types';
+import { STATUS_CONFIG, PIPELINE_ORDER } from '../lib/statusConfig';
 import {
   AlertTriangle,
   Clock,
@@ -47,74 +48,48 @@ export const RequestTable: React.FC<RequestTableProps> = ({
   const isAllSelected =
     filteredRequests.length > 0 && selectedIds.length === filteredRequests.length;
 
-  const getPriorityBadge = (priority: RequestPriority) => {
-    switch (priority) {
-      case 'urgent':
-        return 'bg-red-500/10 text-red-400 border-red-500/20';
-      case 'high':
-        return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
-      case 'medium':
-        return 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20';
-      case 'low':
-        return 'bg-slate-800 text-slate-400 border-slate-700';
-    }
-  };
-
-  const getStatusBadge = (status: RequestStatus) => {
-    switch (status) {
-      case 'new':
-        return 'bg-blue-500/10 text-blue-400 border-blue-500/30';
-      case 'in_progress':
-        return 'bg-amber-500/10 text-amber-400 border-amber-500/30';
-      case 'waiting_on_client':
-        return 'bg-purple-500/10 text-purple-400 border-purple-500/30';
-      case 'done':
-        return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
-    }
-  };
-
   const isOverdue = (req: RequestItem) => {
-    if (!req.due_date || req.status === 'done') return false;
-    return new Date(req.due_date).getTime() < new Date().setHours(0,0,0,0);
+    if (!req.due_date || req.status === 'done' || req.status === 'waiting_on_client') return false;
+    return new Date(req.due_date).getTime() < new Date().setHours(0, 0, 0, 0);
   };
 
   if (filteredRequests.length === 0) {
     return (
-      <div className="glass-panel rounded-2xl p-12 text-center my-6">
-        <div className="w-12 h-12 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center mx-auto mb-3 text-slate-500">
-          <ShieldAlert className="w-6 h-6" />
+      <div className="border border-[var(--border-color)] p-12 text-center my-6 uppercase tracking-widest text-[var(--text-primary)] bg-transparent">
+        <div className="w-10 h-10 flex items-center justify-center mx-auto mb-3 border border-[var(--border-color)]">
+          <ShieldAlert className="w-5 h-5" />
         </div>
-        <h3 className="text-base font-semibold text-slate-200">No requests match your current filters</h3>
-        <p className="text-xs text-slate-400 mt-1">Try resetting your search query or quick tab filters.</p>
+        <h3 className="text-sm font-bold">No requests match your current filters</h3>
+        <p className="text-xs mt-1 text-[var(--text-muted)]">Try resetting your search query or quick tab filters.</p>
       </div>
     );
   }
 
   return (
-    <div className="glass-panel rounded-2xl overflow-hidden border border-slate-800 shadow-2xl mb-8">
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+    <div className="border border-[var(--border-color)] mb-8 bg-transparent">
+      <div className="overflow-x-auto w-full">
+        <table className="min-w-[960px] w-full text-left border-collapse">
           <thead>
-            <tr className="bg-slate-900/90 border-b border-slate-800 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-              <th className="py-3.5 px-4 w-10">
+            <tr className="border-b border-[var(--border-color)] text-[10px] font-bold uppercase tracking-widest text-[var(--text-primary)] bg-[var(--bg-card)]">
+              <th className="py-3 px-3 w-10 border-r border-[var(--border-color)]">
                 <input
                   type="checkbox"
                   checked={isAllSelected}
                   onChange={handleSelectAll}
-                  className="rounded border-slate-700 bg-slate-900 text-indigo-600 focus:ring-indigo-500/20"
+                  className="appearance-none border border-[var(--border-color)] w-3.5 h-3.5 checked:bg-[var(--text-primary)] cursor-pointer"
                 />
               </th>
-              <th className="py-3.5 px-4">Title &amp; Client</th>
-              <th className="py-3.5 px-4">Type of Work</th>
-              <th className="py-3.5 px-4">Status Pipeline</th>
-              <th className="py-3.5 px-4">Priority</th>
-              <th className="py-3.5 px-4">Assigned To</th>
-              <th className="py-3.5 px-4">Due Date</th>
-              <th className="py-3.5 px-4 text-right">Last Active</th>
-              <th className="py-3.5 px-4 w-10"></th>
+              <th className="py-3 px-3 border-r border-[var(--border-color)] min-w-[280px]">Title &amp; Client</th>
+              <th className="py-3 px-3 border-r border-[var(--border-color)] w-36">Type of Work</th>
+              <th className="py-3 px-3 border-r border-[var(--border-color)] w-48">Status Pipeline</th>
+              <th className="py-3 px-3 border-r border-[var(--border-color)] w-24">Priority</th>
+              <th className="py-3 px-3 border-r border-[var(--border-color)] w-40">Assigned To</th>
+              <th className="py-3 px-3 border-r border-[var(--border-color)] w-32">Due Date</th>
+              <th className="py-3 px-3 border-r border-[var(--border-color)] w-32 text-right">Last Active</th>
+              <th className="py-3 px-3 w-10 text-center"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800/60 text-xs">
+          <tbody className="text-xs text-[var(--text-primary)] divide-y divide-[var(--border-color)]">
             {filteredRequests.map(req => {
               const selected = selectedIds.includes(req.id);
               const overdue = isOverdue(req);
@@ -123,84 +98,85 @@ export const RequestTable: React.FC<RequestTableProps> = ({
                 <tr
                   key={req.id}
                   onClick={() => setSelectedRequestId(req.id)}
-                  className={`group cursor-pointer transition-colors duration-150 ${
-                    selected ? 'bg-indigo-950/20' : 'hover:bg-slate-900/50'
+                  className={`group cursor-pointer transition-colors ${
+                    selected ? 'bg-[var(--text-primary)]/15' : 'hover:bg-[var(--text-primary)]/5'
                   }`}
                 >
                   {/* Selection Checkbox */}
-                  <td className="py-3.5 px-4" onClick={e => e.stopPropagation()}>
+                  <td className="py-3 px-3 border-r border-[var(--border-color)]" onClick={e => e.stopPropagation()}>
                     <input
                       type="checkbox"
                       checked={selected}
                       onChange={e => handleToggleOne(req.id, e as any)}
-                      className="rounded border-slate-700 bg-slate-900 text-indigo-600 focus:ring-indigo-500/20"
+                      className="appearance-none border border-[var(--border-color)] w-3.5 h-3.5 checked:bg-[var(--text-primary)] cursor-pointer"
                     />
                   </td>
 
-                  {/* Title & Client */}
-                  <td className="py-3.5 px-4 max-w-xs">
+                  {/* Title & Client - High Contrast, 100% Opacity */}
+                  <td className="py-3 px-3 border-r border-[var(--border-color)]">
                     <div className="flex flex-col gap-0.5">
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-slate-100 group-hover:text-indigo-300 transition truncate">
+                        <span className="font-bold text-xs uppercase tracking-wider line-clamp-1 text-[var(--text-primary)]">
                           {req.title}
                         </span>
                         {req.is_stale && (
                           <span
-                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse-subtle"
-                            title="No activity for over 2 days!"
+                            className="inline-flex items-center gap-1 px-1 py-0.2 border border-[var(--border-color)] text-[8px] font-bold bg-[var(--text-primary)] text-[var(--bg-primary)] shrink-0 animate-pulse-subtle"
+                            title="No activity for over 2 days"
                           >
-                            <AlertTriangle className="w-3 h-3" /> Stale
+                            <AlertTriangle className="w-2.5 h-2.5" /> STALE
                           </span>
                         )}
                       </div>
-                      <span className="text-[11px] text-slate-400 font-medium">
+                      <span className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest">
                         {req.client_name}
                       </span>
                     </div>
                   </td>
 
                   {/* Type of Work */}
-                  <td className="py-3.5 px-4 whitespace-nowrap">
-                    <span className="px-2 py-1 rounded-md bg-slate-800/80 text-slate-300 border border-slate-700 text-[11px] font-medium">
+                  <td className="py-3 px-3 border-r border-[var(--border-color)] whitespace-nowrap">
+                    <span className="px-2 py-0.5 border border-[var(--border-color)] text-[9px] font-bold uppercase tracking-widest inline-block">
                       {req.type_of_work}
                     </span>
                   </td>
 
                   {/* Status Dropdown */}
-                  <td className="py-3.5 px-4 whitespace-nowrap" onClick={e => e.stopPropagation()}>
+                  <td className="py-3 px-3 border-r border-[var(--border-color)] whitespace-nowrap" onClick={e => e.stopPropagation()}>
                     <select
                       value={req.status}
                       onChange={e => updateRequestStatus(req.id, e.target.value as RequestStatus)}
-                      className={`text-xs font-semibold px-2.5 py-1 rounded-lg border focus:outline-none transition cursor-pointer ${getStatusBadge(
-                        req.status
-                      )}`}
+                      className={`text-[9px] uppercase tracking-widest px-2 py-1 appearance-none rounded-none focus:outline-none transition cursor-pointer font-bold ${
+                        STATUS_CONFIG[req.status]?.badgeClass || 'border border-[var(--border-color)] bg-transparent text-[var(--text-primary)]'
+                      }`}
                     >
-                      <option value="new" className="bg-slate-900 text-blue-400">New</option>
-                      <option value="in_progress" className="bg-slate-900 text-amber-400">In Progress</option>
-                      <option value="waiting_on_client" className="bg-slate-900 text-purple-400">Waiting on Client</option>
-                      <option value="done" className="bg-slate-900 text-emerald-400">Done</option>
+                      {PIPELINE_ORDER.map(st => (
+                        <option key={st} value={st} className="bg-[var(--bg-primary)] text-[var(--text-primary)]">
+                          {STATUS_CONFIG[st].label.toUpperCase()}
+                        </option>
+                      ))}
                     </select>
                   </td>
 
                   {/* Priority Badge */}
-                  <td className="py-3.5 px-4 whitespace-nowrap">
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${getPriorityBadge(req.priority)}`}>
+                  <td className="py-3 px-3 border-r border-[var(--border-color)] whitespace-nowrap">
+                    <span className="px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest border border-[var(--border-color)] text-[var(--text-primary)] inline-block">
                       {req.priority}
                     </span>
                   </td>
 
                   {/* Assignee Dropdown */}
-                  <td className="py-3.5 px-4 whitespace-nowrap" onClick={e => e.stopPropagation()}>
+                  <td className="py-3 px-3 border-r border-[var(--border-color)] whitespace-nowrap" onClick={e => e.stopPropagation()}>
                     <div className="flex items-center gap-1.5">
-                      <User className="w-3.5 h-3.5 text-slate-400" />
+                      <User className="w-3 h-3 text-[var(--text-muted)] shrink-0" />
                       <select
                         value={req.assigned_to || ''}
                         onChange={e => reassignRequest(req.id, e.target.value || null)}
-                        className="text-xs bg-transparent text-slate-300 border-b border-transparent hover:border-slate-700 focus:border-indigo-500 focus:outline-none py-0.5 cursor-pointer"
+                        className="text-[9px] font-bold uppercase tracking-widest bg-transparent text-[var(--text-primary)] border-b border-[var(--border-color)] focus:outline-none py-0.5 cursor-pointer appearance-none rounded-none"
                       >
-                        <option value="" className="bg-slate-900 text-slate-400">Unassigned</option>
+                        <option value="" className="bg-[var(--bg-primary)] text-[var(--text-primary)]">UNASSIGNED</option>
                         {allUsers.map(u => (
-                          <option key={u.id} value={u.id} className="bg-slate-900 text-slate-200">
+                          <option key={u.id} value={u.id} className="bg-[var(--bg-primary)] text-[var(--text-primary)]">
                             {u.name}
                           </option>
                         ))}
@@ -209,31 +185,38 @@ export const RequestTable: React.FC<RequestTableProps> = ({
                   </td>
 
                   {/* Due Date */}
-                  <td className="py-3.5 px-4 whitespace-nowrap">
+                  <td className="py-3 px-3 border-r border-[var(--border-color)] whitespace-nowrap">
                     {req.due_date ? (
-                      <div className={`flex items-center gap-1 text-[11px] font-medium ${
-                        overdue ? 'text-red-400 font-bold' : 'text-slate-300'
+                      <div className={`flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest ${
+                        overdue ? 'border border-[var(--border-color)] bg-[var(--text-primary)] text-[var(--bg-primary)] px-1 py-0.5' : 'text-[var(--text-primary)]'
                       }`}>
-                        <Calendar className="w-3.5 h-3.5" />
+                        <Calendar className="w-3 h-3 shrink-0" />
                         <span>{req.due_date}</span>
-                        {overdue && <span className="text-[10px] bg-red-500/20 text-red-300 px-1 py-0.5 rounded">Overdue</span>}
+                        {overdue && <span className="ml-1 text-[8px] bg-red-600 text-white px-0.5">OVERDUE</span>}
                       </div>
                     ) : (
-                      <span className="text-slate-500 text-[11px]">No due date</span>
+                      <span className="text-[var(--text-muted)] text-[9px] uppercase tracking-widest">NO DATE</span>
                     )}
                   </td>
 
                   {/* Last Activity */}
-                  <td className="py-3.5 px-4 whitespace-nowrap text-right text-slate-400 text-[11px]">
+                  <td className="py-3 px-3 border-r border-[var(--border-color)] whitespace-nowrap text-right text-[9px] uppercase tracking-widest text-[var(--text-muted)]">
                     <div className="flex items-center justify-end gap-1">
-                      <Clock className="w-3 h-3 text-slate-500" />
+                      <Clock className="w-2.5 h-2.5 shrink-0" />
                       <span>{formatDistanceToNow(new Date(req.last_activity_at), { addSuffix: true })}</span>
                     </div>
                   </td>
 
                   {/* Arrow Indicator */}
-                  <td className="py-3.5 px-4 text-slate-500 group-hover:text-slate-200 transition">
-                    <ChevronRight className="w-4 h-4" />
+                  <td className="py-3 px-3 text-[var(--text-primary)] text-center" onClick={e => e.stopPropagation()}>
+                    <button
+                      onClick={() => setSelectedRequestId(req.id)}
+                      className="p-1 border border-transparent hover:border-[var(--border-color)] hover:bg-[var(--text-primary)] hover:text-[var(--bg-primary)] transition-colors cursor-pointer"
+                      title="Open Request Details"
+                      aria-label="Open Request Details"
+                    >
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
                   </td>
                 </tr>
               );

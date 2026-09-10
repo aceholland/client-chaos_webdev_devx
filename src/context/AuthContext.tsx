@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { UserProfile, UserRole } from '../types';
+import type { UserProfile, UserRole } from '../types';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { INITIAL_USERS } from '../lib/mockData';
 

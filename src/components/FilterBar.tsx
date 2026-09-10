@@ -2,7 +2,6 @@ import React from 'react';
 import { useRequests } from '../context/RequestContext';
 import {
   Search,
-  Filter,
   ArrowUpDown,
   LayoutList,
   Kanban,
@@ -12,8 +11,9 @@ import {
   UserX,
   Layers,
   Calendar,
+  Clock,
 } from 'lucide-react';
-import { RequestPriority, RequestStatus } from '../types';
+import type { RequestPriority, RequestStatus, QuickTabType } from '../types';
 
 interface FilterBarProps {
   viewMode: 'table' | 'kanban';
@@ -21,9 +21,9 @@ interface FilterBarProps {
 }
 
 export const FilterBar: React.FC<FilterBarProps> = ({ viewMode, setViewMode }) => {
-  const { filters, setFilters, clients } = useRequests();
+  const { filters, setFilters, clients, stats, requests } = useRequests();
 
-  const handleQuickTab = (tab: 'all' | 'mine' | 'unassigned' | 'stale') => {
+  const handleQuickTab = (tab: QuickTabType) => {
     setFilters(prev => ({ ...prev, quickTab: tab }));
   };
 
@@ -51,100 +51,126 @@ export const FilterBar: React.FC<FilterBarProps> = ({ viewMode, setViewMode }) =
     filters.dateEnd !== '';
 
   return (
-    <div className="glass-panel rounded-2xl p-4 mb-6 space-y-4 shadow-xl border border-slate-800">
+    <div className="border border-[var(--border-color)] bg-transparent p-4 mb-6 space-y-4">
       {/* Top Row: Quick Filter Tabs & View Toggle */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        {/* Quick Tabs */}
-        <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-900/90 rounded-xl border border-slate-800">
+        {/* Quick Tabs: Active = solid fill, Inactive = bordered outline */}
+        <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-wider">
+          {/* 1. All Requests */}
           <button
             onClick={() => handleQuickTab('all')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ${
+            className={`px-3 py-1.5 border border-[var(--border-color)] flex items-center gap-1.5 transition-colors cursor-pointer font-bold ${
               filters.quickTab === 'all'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                ? 'bg-[var(--text-primary)] text-[var(--bg-primary)]'
+                : 'bg-transparent text-[var(--text-primary)] hover:bg-[var(--text-primary)] hover:text-[var(--bg-primary)]'
             }`}
           >
             <Layers className="w-3.5 h-3.5" />
-            <span>All Requests</span>
+            <span>ALL ({requests.length})</span>
           </button>
+
+          {/* 2. Waiting on Us */}
           <button
-            onClick={() => handleQuickTab('mine')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ${
-              filters.quickTab === 'mine'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+            onClick={() => handleQuickTab('waiting_on_us')}
+            className={`px-3 py-1.5 border border-[var(--border-color)] flex items-center gap-1.5 transition-colors cursor-pointer font-bold ${
+              filters.quickTab === 'waiting_on_us'
+                ? 'bg-[var(--text-primary)] text-[var(--bg-primary)]'
+                : 'bg-transparent text-[var(--text-primary)] hover:bg-[var(--text-primary)] hover:text-[var(--bg-primary)]'
+            }`}
+          >
+            <Clock className="w-3.5 h-3.5" />
+            <span>WAITING ON US ({stats.waitingOnUsCount})</span>
+          </button>
+
+          {/* 3. Waiting on Client */}
+          <button
+            onClick={() => handleQuickTab('waiting_on_client')}
+            className={`px-3 py-1.5 border flex items-center gap-1.5 transition-colors cursor-pointer font-bold ${
+              filters.quickTab === 'waiting_on_client'
+                ? 'bg-amber-600 text-white border-amber-600 dark:bg-amber-500 dark:text-black dark:border-amber-500'
+                : 'border-amber-600 text-amber-700 dark:border-amber-400 dark:text-amber-300 bg-amber-500/10 hover:bg-amber-600 hover:text-white dark:hover:bg-amber-400 dark:hover:text-black'
             }`}
           >
             <User className="w-3.5 h-3.5" />
-            <span>Assigned to Me</span>
+            <span>WAITING ON CLIENT ({stats.waitingOnClientCount})</span>
           </button>
+
+          {/* 4. Unassigned */}
           <button
             onClick={() => handleQuickTab('unassigned')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ${
+            className={`px-3 py-1.5 border border-[var(--border-color)] flex items-center gap-1.5 transition-colors cursor-pointer font-bold ${
               filters.quickTab === 'unassigned'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                ? 'bg-[var(--text-primary)] text-[var(--bg-primary)]'
+                : 'bg-transparent text-[var(--text-primary)] hover:bg-[var(--text-primary)] hover:text-[var(--bg-primary)]'
             }`}
           >
             <UserX className="w-3.5 h-3.5" />
-            <span>Unassigned</span>
+            <span>UNASSIGNED ({stats.unassignedCount})</span>
           </button>
+
+          {/* 5. Overdue / Stale */}
           <button
             onClick={() => handleQuickTab('stale')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ${
+            className={`px-3 py-1.5 border border-[var(--border-color)] flex items-center gap-1.5 transition-colors cursor-pointer font-bold ${
               filters.quickTab === 'stale'
-                ? 'bg-amber-600 text-white shadow-sm'
-                : 'text-amber-400 hover:text-amber-300 hover:bg-amber-950/40'
+                ? 'bg-[var(--text-primary)] text-[var(--bg-primary)]'
+                : stats.staleCount > 0
+                ? 'bg-transparent text-[var(--text-primary)] hover:bg-[var(--text-primary)] hover:text-[var(--bg-primary)]'
+                : 'bg-transparent text-[var(--text-primary)] hover:bg-[var(--text-primary)] hover:text-[var(--bg-primary)]'
             }`}
           >
             <AlertTriangle className="w-3.5 h-3.5" />
-            <span>Stale / Overdue</span>
+            <span>OVERDUE ({stats.staleCount})</span>
           </button>
         </div>
 
         {/* View Switcher (Table vs Kanban) */}
-        <div className="flex items-center gap-1 p-1 bg-slate-900/90 rounded-xl border border-slate-800">
+        <div className="flex items-center gap-2 text-xs uppercase tracking-wider">
           <button
             onClick={() => setViewMode('table')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition ${
-              viewMode === 'table' ? 'bg-slate-800 text-indigo-400 font-semibold' : 'text-slate-400 hover:text-slate-200'
+            className={`px-3 py-1.5 flex items-center gap-1.5 transition-colors border border-[var(--border-color)] cursor-pointer font-bold ${
+              viewMode === 'table' 
+                ? 'bg-[var(--text-primary)] text-[var(--bg-primary)]' 
+                : 'bg-transparent text-[var(--text-primary)] hover:bg-[var(--text-primary)] hover:text-[var(--bg-primary)]'
             }`}
-            title="List View"
+            title="Table View"
           >
-            <LayoutList className="w-4 h-4" />
-            <span className="hidden sm:inline">Table</span>
+            <LayoutList className="w-3.5 h-3.5" />
+            <span>Table</span>
           </button>
           <button
             onClick={() => setViewMode('kanban')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition ${
-              viewMode === 'kanban' ? 'bg-slate-800 text-indigo-400 font-semibold' : 'text-slate-400 hover:text-slate-200'
+            className={`px-3 py-1.5 flex items-center gap-1.5 transition-colors border border-[var(--border-color)] cursor-pointer font-bold ${
+              viewMode === 'kanban' 
+                ? 'bg-[var(--text-primary)] text-[var(--bg-primary)]' 
+                : 'bg-transparent text-[var(--text-primary)] hover:bg-[var(--text-primary)] hover:text-[var(--bg-primary)]'
             }`}
-            title="Kanban Board View"
+            title="Board View"
           >
-            <Kanban className="w-4 h-4" />
-            <span className="hidden sm:inline">Board</span>
+            <Kanban className="w-3.5 h-3.5" />
+            <span>Board</span>
           </button>
         </div>
       </div>
 
       {/* Bottom Row: Search Box, Dropdowns, Date Picker & Sort */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 pt-2 border-t border-slate-800/60">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 pt-4 border-t border-[var(--border-color)]">
         {/* Search Input */}
         <div className="lg:col-span-2 relative">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-3.5 h-3.5 text-[var(--text-muted)] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
-            placeholder="Search by title, desc, or client..."
+            placeholder="SEARCH REQUESTS..."
             value={filters.searchQuery}
             onChange={e => setFilters(prev => ({ ...prev, searchQuery: e.target.value }))}
-            className="w-full bg-slate-900/90 border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition"
+            className="w-full bg-transparent border border-[var(--border-color)] pl-9 pr-8 py-1.5 text-xs uppercase tracking-wider text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none"
           />
           {filters.searchQuery && (
             <button
               onClick={() => setFilters(prev => ({ ...prev, searchQuery: '' }))}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer"
             >
-              <X className="w-3.5 h-3.5" />
+              <X className="w-3 h-3" />
             </button>
           )}
         </div>
@@ -154,9 +180,9 @@ export const FilterBar: React.FC<FilterBarProps> = ({ viewMode, setViewMode }) =
           <select
             value={filters.client_id}
             onChange={e => setFilters(prev => ({ ...prev, client_id: e.target.value }))}
-            className="w-full bg-slate-900/90 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 transition"
+            className="w-full bg-[var(--bg-primary)] border border-[var(--border-color)] px-3 py-1.5 text-xs uppercase tracking-wider text-[var(--text-primary)] focus:outline-none cursor-pointer"
           >
-            <option value="all">All Clients</option>
+            <option value="all">ALL CLIENTS</option>
             {clients.map(c => (
               <option key={c.id} value={c.id}>
                 {c.name}
@@ -170,13 +196,15 @@ export const FilterBar: React.FC<FilterBarProps> = ({ viewMode, setViewMode }) =
           <select
             value={filters.status}
             onChange={e => setFilters(prev => ({ ...prev, status: e.target.value as RequestStatus | 'all' }))}
-            className="w-full bg-slate-900/90 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 transition"
+            className="w-full bg-[var(--bg-primary)] border border-[var(--border-color)] px-3 py-1.5 text-xs uppercase tracking-wider text-[var(--text-primary)] focus:outline-none cursor-pointer"
           >
-            <option value="all">All Statuses</option>
-            <option value="new">New</option>
-            <option value="in_progress">In Progress</option>
-            <option value="waiting_on_client">Waiting on Client</option>
-            <option value="done">Done</option>
+            <option value="all">ALL STATUSES</option>
+            <option value="new">NEW INTAKE</option>
+            <option value="needs_clarification">NEEDS CLARIFICATION</option>
+            <option value="ready_to_assign">READY TO ASSIGN</option>
+            <option value="in_progress">IN PROGRESS</option>
+            <option value="waiting_on_client">WAITING ON CLIENT</option>
+            <option value="done">DONE</option>
           </select>
         </div>
 
@@ -185,13 +213,13 @@ export const FilterBar: React.FC<FilterBarProps> = ({ viewMode, setViewMode }) =
           <select
             value={filters.priority}
             onChange={e => setFilters(prev => ({ ...prev, priority: e.target.value as RequestPriority | 'all' }))}
-            className="w-full bg-slate-900/90 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 transition"
+            className="w-full bg-[var(--bg-primary)] border border-[var(--border-color)] px-3 py-1.5 text-xs uppercase tracking-wider text-[var(--text-primary)] focus:outline-none cursor-pointer"
           >
-            <option value="all">All Priorities</option>
-            <option value="urgent">Urgent</option>
-            <option value="high">High</option>
-            <option value="medium">Medium</option>
-            <option value="low">Low</option>
+            <option value="all">ALL PRIORITIES</option>
+            <option value="urgent">URGENT</option>
+            <option value="high">HIGH</option>
+            <option value="medium">MEDIUM</option>
+            <option value="low">LOW</option>
           </select>
         </div>
 
@@ -200,12 +228,12 @@ export const FilterBar: React.FC<FilterBarProps> = ({ viewMode, setViewMode }) =
           <select
             value={filters.sortBy}
             onChange={e => setFilters(prev => ({ ...prev, sortBy: e.target.value as any }))}
-            className="w-full bg-slate-900/90 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 transition"
+            className="w-full bg-[var(--bg-primary)] border border-[var(--border-color)] px-2.5 py-1.5 text-xs uppercase tracking-wider text-[var(--text-primary)] focus:outline-none cursor-pointer"
           >
-            <option value="created_at">Sort: Created Date</option>
-            <option value="due_date">Sort: Due Date</option>
-            <option value="priority">Sort: Priority</option>
-            <option value="last_activity_at">Sort: Last Active</option>
+            <option value="created_at">SORT: CREATED</option>
+            <option value="due_date">SORT: DUE DATE</option>
+            <option value="priority">SORT: PRIORITY</option>
+            <option value="last_activity_at">SORT: LAST ACTIVE</option>
           </select>
 
           <button
@@ -215,41 +243,41 @@ export const FilterBar: React.FC<FilterBarProps> = ({ viewMode, setViewMode }) =
                 sortOrder: prev.sortOrder === 'asc' ? 'desc' : 'asc',
               }))
             }
-            className="p-2 rounded-xl bg-slate-900/90 border border-slate-800 text-slate-300 hover:text-white transition"
+            className="p-1.5 border border-[var(--border-color)] bg-transparent text-[var(--text-primary)] hover:bg-[var(--text-primary)] hover:text-[var(--bg-primary)] transition-colors shrink-0 cursor-pointer"
             title={`Order: ${filters.sortOrder.toUpperCase()}`}
           >
-            <ArrowUpDown className="w-4 h-4" />
+            <ArrowUpDown className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
 
       {/* Date Range & Clear Filters Row */}
       {hasActiveFilters && (
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-2 text-xs border-t border-slate-800/40">
-          <div className="flex items-center gap-2 text-slate-400">
-            <Calendar className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Filter Created Date:</span>
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[var(--border-color)] text-[11px] uppercase tracking-wider text-[var(--text-muted)]">
+          <div className="flex items-center gap-2">
+            <Calendar className="w-3 h-3 text-[var(--text-primary)]" />
+            <span className="text-[var(--text-primary)]">DATE:</span>
             <input
               type="date"
               value={filters.dateStart}
               onChange={e => setFilters(prev => ({ ...prev, dateStart: e.target.value }))}
-              className="bg-slate-900 border border-slate-800 rounded-lg px-2 py-1 text-slate-200"
+              className="bg-transparent border border-[var(--border-color)] px-2 py-0.5 text-[var(--text-primary)] outline-none"
             />
-            <span>to</span>
+            <span className="text-[var(--text-primary)]">TO</span>
             <input
               type="date"
               value={filters.dateEnd}
               onChange={e => setFilters(prev => ({ ...prev, dateEnd: e.target.value }))}
-              className="bg-slate-900 border border-slate-800 rounded-lg px-2 py-1 text-slate-200"
+              className="bg-transparent border border-[var(--border-color)] px-2 py-0.5 text-[var(--text-primary)] outline-none"
             />
           </div>
 
           <button
             onClick={clearFilters}
-            className="flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 transition font-medium"
+            className="flex items-center gap-1 font-bold text-[var(--text-primary)] hover:underline cursor-pointer"
           >
-            <X className="w-3.5 h-3.5" />
-            <span>Reset All Filters</span>
+            <X className="w-3 h-3" />
+            <span>RESET FILTERS</span>
           </button>
         </div>
       )}

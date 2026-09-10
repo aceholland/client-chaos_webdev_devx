@@ -1,122 +1,86 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import React, { useState } from 'react';
+import { AuthProvider } from './context/AuthContext';
+import { RequestProvider } from './context/RequestContext';
+import { ThemeProvider } from './context/ThemeContext';
+import { Navbar } from './components/Navbar';
+import { DashboardStats } from './components/DashboardStats';
+import { FilterBar } from './components/FilterBar';
+import { RequestTable } from './components/RequestTable';
+import { RequestKanban } from './components/RequestKanban';
+import { RequestDetailDrawer } from './components/RequestDetailDrawer';
+import { NewRequestModal } from './components/NewRequestModal';
+import { ClientManagerModal } from './components/ClientManagerModal';
+import { AuthModal } from './components/AuthModal';
+import { BulkActionBar } from './components/BulkActionBar';
 
-function App() {
-  const [count, setCount] = useState(0)
+const MainDashboard: React.FC = () => {
+  const [viewMode, setViewMode] = useState<'table' | 'kanban'>('table');
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  
+  const [showNewRequest, setShowNewRequest] = useState(false);
+  const [showClientManager, setShowClientManager] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className="min-h-screen flex flex-col bg-grid-pattern text-[var(--text-primary)]">
+      <Navbar
+        onOpenNewRequest={() => setShowNewRequest(true)}
+        onOpenClientManager={() => setShowClientManager(true)}
+        onOpenAuthModal={() => setShowAuthModal(true)}
+      />
 
-      <div className="ticks"></div>
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-6">
+        {/* Summary Stats Header */}
+        <DashboardStats />
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+        {/* Filters, Search & Sorting Bar */}
+        <FilterBar viewMode={viewMode} setViewMode={setViewMode} />
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+        {/* Requests Container (Table or Kanban View) */}
+        {viewMode === 'table' ? (
+          <RequestTable selectedIds={selectedIds} setSelectedIds={setSelectedIds} />
+        ) : (
+          <RequestKanban />
+        )}
+      </main>
+
+      {/* Sticky Bottom Bulk Action Bar */}
+      <BulkActionBar
+        selectedIds={selectedIds}
+        clearSelection={() => setSelectedIds([])}
+      />
+
+      {/* Modals & Drawers */}
+      <RequestDetailDrawer />
+
+      {showNewRequest && (
+        <NewRequestModal onClose={() => setShowNewRequest(false)} />
+      )}
+
+      {showClientManager && (
+        <ClientManagerModal onClose={() => setShowClientManager(false)} />
+      )}
+
+      {showAuthModal && (
+        <AuthModal onClose={() => setShowAuthModal(false)} />
+      )}
+
+      {/* Footer */}
+      <footer className="border-t border-[var(--border-color)] py-6 text-center text-xs text-[var(--text-muted)] uppercase tracking-widest">
+        <p>Lala Tracker &copy; {new Date().getFullYear()} Lala Tech LLC. Centralized Client Request Management.</p>
+      </footer>
+    </div>
+  );
+};
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <AuthProvider>
+        <RequestProvider>
+          <MainDashboard />
+        </RequestProvider>
+      </AuthProvider>
+    </ThemeProvider>
+  );
 }
-
-export default App
