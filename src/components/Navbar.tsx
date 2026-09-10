@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { useRequests } from '../context/RequestContext';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { NotificationsPopover } from './NotificationsPopover';
 import {
@@ -14,22 +15,43 @@ import {
   Plus,
   Sun,
   Moon,
+  BarChart3,
+  Activity,
 } from 'lucide-react';
 
 interface NavbarProps {
   onOpenNewRequest: () => void;
   onOpenClientManager: () => void;
   onOpenAuthModal: () => void;
+  onOpenAnalytics?: () => void;
+  onOpenActivityFeed?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   onOpenNewRequest,
   onOpenClientManager,
   onOpenAuthModal,
+  onOpenAnalytics,
+  onOpenActivityFeed,
 }) => {
   const { user, allUsers, switchMockUser, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { requests, comments } = useRequests();
   const [showNotifications, setShowNotifications] = useState(false);
+
+  // Compute notification badge count
+  const notificationCount = React.useMemo(() => {
+    if (!user) return 0;
+    const assignedToMe = requests.filter(r => r.assigned_to === user.id);
+    const staleCount = assignedToMe.filter(r => r.is_stale).length;
+    const recentCount = assignedToMe.filter(r => {
+      const hoursAgo = (Date.now() - new Date(r.created_at).getTime()) / (1000 * 60 * 60);
+      return hoursAgo <= 48 && r.status !== 'done';
+    }).length;
+    const myReqIds = new Set(requests.filter(r => r.assigned_to === user.id || r.created_by === user.id).map(r => r.id));
+    const recentCommentCount = comments.filter(c => myReqIds.has(c.request_id) && c.user_id !== user.id).length;
+    return staleCount + recentCount + recentCommentCount;
+  }, [user, requests, comments]);
 
   return (
     <header className="sticky top-0 z-30 bg-[var(--bg-primary)] text-[var(--text-primary)] border-b border-[var(--border-color)] px-4 lg:px-8 py-3 transition-colors">
@@ -73,6 +95,30 @@ export const Navbar: React.FC<NavbarProps> = ({
             )}
           </button>
 
+          {/* Global Activity Feed */}
+          {onOpenActivityFeed && (
+            <button
+              onClick={onOpenActivityFeed}
+              className="flex items-center gap-1.5 border border-[var(--border-color)] px-2.5 py-1.5 hover:bg-[var(--text-primary)] hover:text-[var(--bg-primary)] transition-colors cursor-pointer text-xs"
+              title="Global Activity Feed"
+            >
+              <Activity className="w-3.5 h-3.5" />
+              <span className="hidden md:inline">Feed</span>
+            </button>
+          )}
+
+          {/* Analytics / Reports */}
+          {onOpenAnalytics && (
+            <button
+              onClick={onOpenAnalytics}
+              className="flex items-center gap-1.5 border border-[var(--border-color)] px-2.5 py-1.5 hover:bg-[var(--text-primary)] hover:text-[var(--bg-primary)] transition-colors cursor-pointer text-xs"
+              title="System Analytics & Reports"
+            >
+              <BarChart3 className="w-3.5 h-3.5" />
+              <span className="hidden md:inline">Analytics</span>
+            </button>
+          )}
+
           {/* Manage Clients Button */}
           <button
             onClick={onOpenClientManager}
@@ -100,6 +146,11 @@ export const Navbar: React.FC<NavbarProps> = ({
               aria-label="Notifications"
             >
               <Bell className="w-4 h-4" />
+              {notificationCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 px-1 py-0.2 bg-[var(--text-primary)] text-[var(--bg-primary)] border border-[var(--border-color)] text-[8px] font-bold leading-none">
+                  {notificationCount}
+                </span>
+              )}
             </button>
             {showNotifications && (
               <NotificationsPopover onClose={() => setShowNotifications(false)} />

@@ -12,6 +12,7 @@ import {
   Layers,
   Calendar,
   Clock,
+  Bookmark,
 } from 'lucide-react';
 import type { RequestPriority, RequestStatus, QuickTabType } from '../types';
 
@@ -22,6 +23,54 @@ interface FilterBarProps {
 
 export const FilterBar: React.FC<FilterBarProps> = ({ viewMode, setViewMode }) => {
   const { filters, setFilters, clients, stats, requests } = useRequests();
+
+  // Saved Views (stored in localStorage)
+  const [savedViews, setSavedViews] = React.useState<Array<{ name: string; filters: typeof filters }>>(() => {
+    const saved = localStorage.getItem('lala_saved_views');
+    if (saved) {
+      try { return JSON.parse(saved); } catch {}
+    }
+    return [
+      {
+        name: 'My Overdue Tasks',
+        filters: {
+          status: 'all',
+          priority: 'all',
+          quickTab: 'stale',
+          client_id: 'all',
+          searchQuery: '',
+          dateStart: '',
+          dateEnd: '',
+          sortBy: 'last_activity_at',
+          sortOrder: 'desc',
+        },
+      },
+    ];
+  });
+
+  const [savingViewName, setSavingViewName] = React.useState('');
+  const [showSaveInput, setShowSaveInput] = React.useState(false);
+
+  const handleSaveCurrentView = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!savingViewName.trim()) return;
+    const updated = [...savedViews, { name: savingViewName.trim(), filters: { ...filters } }];
+    setSavedViews(updated);
+    localStorage.setItem('lala_saved_views', JSON.stringify(updated));
+    setSavingViewName('');
+    setShowSaveInput(false);
+  };
+
+  const handleApplySavedView = (sv: { name: string; filters: typeof filters }) => {
+    setFilters({ ...sv.filters });
+  };
+
+  const handleDeleteSavedView = (idx: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const updated = savedViews.filter((_, i) => i !== idx);
+    setSavedViews(updated);
+    localStorage.setItem('lala_saved_views', JSON.stringify(updated));
+  };
 
   const handleQuickTab = (tab: QuickTabType) => {
     setFilters(prev => ({ ...prev, quickTab: tab }));
@@ -52,6 +101,59 @@ export const FilterBar: React.FC<FilterBarProps> = ({ viewMode, setViewMode }) =
 
   return (
     <div className="border border-[var(--border-color)] bg-transparent p-4 mb-6 space-y-4">
+      {/* Pinned Saved Views Row */}
+      <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-[var(--border-color)] text-[10px] uppercase tracking-wider">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="flex items-center gap-1 font-bold text-[var(--text-muted)]">
+            <Bookmark className="w-3 h-3" />
+            <span>SAVED VIEWS:</span>
+          </span>
+          {savedViews.map((sv, idx) => (
+            <div
+              key={sv.name + idx}
+              onClick={() => handleApplySavedView(sv)}
+              className="px-2.5 py-1 border border-[var(--border-color)] bg-[var(--bg-card)] hover:bg-[var(--text-primary)] hover:text-[var(--bg-primary)] transition-colors cursor-pointer flex items-center gap-1.5 font-bold"
+              title={`Load view "${sv.name}"`}
+            >
+              <span>{sv.name}</span>
+              <button
+                onClick={e => handleDeleteSavedView(idx, e)}
+                className="hover:text-red-500 p-0.5"
+                title="Delete view"
+              >
+                <X className="w-2.5 h-2.5" />
+              </button>
+            </div>
+          ))}
+
+          {showSaveInput ? (
+            <form onSubmit={handleSaveCurrentView} className="flex items-center border border-[var(--border-color)]">
+              <input
+                type="text"
+                autoFocus
+                placeholder="VIEW NAME..."
+                value={savingViewName}
+                onChange={e => setSavingViewName(e.target.value)}
+                className="bg-transparent px-2 py-0.5 text-[10px] uppercase outline-none text-[var(--text-primary)] placeholder-[var(--text-muted)] w-28"
+              />
+              <button type="submit" className="px-1.5 py-0.5 bg-[var(--text-primary)] text-[var(--bg-primary)] font-bold">
+                SAVE
+              </button>
+              <button type="button" onClick={() => setShowSaveInput(false)} className="px-1 text-[var(--text-muted)]">
+                ✕
+              </button>
+            </form>
+          ) : (
+            <button
+              onClick={() => setShowSaveInput(true)}
+              className="px-2 py-1 border border-dashed border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--border-color)] transition-colors cursor-pointer"
+            >
+              + PIN CURRENT VIEW
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Top Row: Quick Filter Tabs & View Toggle */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         {/* Quick Tabs: Active = solid fill, Inactive = bordered outline */}

@@ -13,6 +13,7 @@ import {
   AlertTriangle,
   Send,
   Terminal,
+  Share2,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -35,7 +36,9 @@ export const RequestDetailDrawer: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'comments' | 'history'>('comments');
   const [newCommentText, setNewCommentText] = useState('');
   const [copiedUpdate, setCopiedUpdate] = useState(false);
-  const [updateTemplate, setUpdateTemplate] = useState<'client' | 'escalation'>('client');
+  const [copiedShareLink, setCopiedShareLink] = useState(false);
+  const [updateTemplate, setUpdateTemplate] = useState<'client' | 'escalation' | 'reminder'>('client');
+  const [suggestReadyToAssign, setSuggestReadyToAssign] = useState(false);
 
   if (!selectedRequest) return null;
 
@@ -50,8 +53,12 @@ export const RequestDetailDrawer: React.FC = () => {
   const handleAddComment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCommentText.trim()) return;
+    const isWaiting = selectedRequest.status === 'waiting_on_client';
     await addComment(selectedRequest.id, newCommentText);
     setNewCommentText('');
+    if (isWaiting) {
+      setSuggestReadyToAssign(true);
+    }
   };
 
   const generatedUpdateText = (() => {
@@ -59,6 +66,10 @@ export const RequestDetailDrawer: React.FC = () => {
 
     if (updateTemplate === 'escalation') {
       return `[INTERNAL ESCALATION NOTE]\nTask: ${selectedRequest.title} (ID: ${selectedRequest.id})\nClient: ${selectedRequest.client_name}\nStatus: ${statusLabel}\nPriority: ${selectedRequest.priority.toUpperCase()}\nAssigned: ${selectedRequest.assigned_user_name || 'UNASSIGNED'}\nTarget Due: ${selectedRequest.due_date || 'None'}\nAction Required: Urgent team alignment needed to unblock this request.`;
+    }
+
+    if (updateTemplate === 'reminder') {
+      return `Hi ${selectedRequest.client_name}, following up regarding '${selectedRequest.title}'. We are currently paused waiting on your inputs to proceed. Please review and reply at your earliest convenience so we can keep this on schedule. Thank you!`;
     }
 
     let text = `Hi ${selectedRequest.client_name}, quick update on '${selectedRequest.title}': this is currently ${statusLabel}.`;
@@ -114,6 +125,30 @@ export const RequestDetailDrawer: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Shareable Client Link Button */}
+            <button
+              onClick={() => {
+                const shareUrl = `${window.location.origin}/?ticket=${selectedRequest.id}`;
+                navigator.clipboard.writeText(shareUrl);
+                setCopiedShareLink(true);
+                setTimeout(() => setCopiedShareLink(false), 3000);
+              }}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 border border-[var(--border-color)] text-xs uppercase tracking-wider hover:bg-[var(--text-primary)] hover:text-[var(--bg-primary)] transition-colors cursor-pointer"
+              title="Copy client-friendly read-only link"
+            >
+              {copiedShareLink ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="hidden sm:inline">COPIED LINK</span>
+                </>
+              ) : (
+                <>
+                  <Share2 className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">SHARE LINK</span>
+                </>
+              )}
+            </button>
+
             {user?.role === 'admin' && (
               <button
                 onClick={() => {
@@ -194,6 +229,7 @@ export const RequestDetailDrawer: React.FC = () => {
                   >
                     <option value="client">Template: Client-Facing Update</option>
                     <option value="escalation">Template: Internal Escalation Note</option>
+                    <option value="reminder">Template: Reminder for Pending Client Input</option>
                   </select>
 
                   <button
@@ -252,7 +288,34 @@ export const RequestDetailDrawer: React.FC = () => {
 
               {activeTab === 'comments' ? (
                 <div className="space-y-4">
-                  {/* Add comment form */}
+                  {/* Suggestion banner when client comment is added while waiting_on_client */}
+                  {suggestReadyToAssign && selectedRequest.status === 'waiting_on_client' && (
+                    <div className="p-3 border border-amber-600 dark:border-amber-400 bg-amber-500/10 text-xs font-mono uppercase tracking-wider flex items-center justify-between gap-3">
+                      <div>
+                        <span className="font-bold block">Suggestion: Client replied</span>
+                        <span className="text-[10px] text-[var(--text-muted)]">Would you like to move this ticket to "Ready to Assign"?</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            updateRequestStatus(selectedRequest.id, 'ready_to_assign');
+                            setSuggestReadyToAssign(false);
+                          }}
+                          className="px-3 py-1 bg-[var(--text-primary)] text-[var(--bg-primary)] border border-[var(--border-color)] font-bold text-[10px] uppercase hover:opacity-90 cursor-pointer"
+                        >
+                          Move to Ready
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSuggestReadyToAssign(false)}
+                          className="px-2 py-1 text-[10px] text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer"
+                        >
+                          Dismiss
+                        </button>
+                      </div>
+                    </div>
+                  )}
                   <form onSubmit={handleAddComment} className="flex gap-2">
                     <input
                       type="text"

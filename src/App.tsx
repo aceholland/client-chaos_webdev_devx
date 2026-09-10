@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { AuthProvider } from './context/AuthContext';
-import { RequestProvider } from './context/RequestContext';
+import { RequestProvider, useRequests } from './context/RequestContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { Navbar } from './components/Navbar';
 import { DashboardStats } from './components/DashboardStats';
@@ -13,14 +13,28 @@ import { NewRequestModal } from './components/NewRequestModal';
 import { ClientManagerModal } from './components/ClientManagerModal';
 import { AuthModal } from './components/AuthModal';
 import { BulkActionBar } from './components/BulkActionBar';
+import { AnalyticsModal } from './components/AnalyticsModal';
+import { ActivityFeedModal } from './components/ActivityFeedModal';
 
 const MainDashboard: React.FC = () => {
+  const { setSelectedRequestId } = useRequests();
   const [viewMode, setViewMode] = useState<'table' | 'kanban'>('table');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   
   const [showNewRequest, setShowNewRequest] = useState(false);
   const [showClientManager, setShowClientManager] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showActivityFeed, setShowActivityFeed] = useState(false);
+
+  // Client Portal Lite: Read-only shareable ticket link (?ticket=req-xxx)
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ticketId = params.get('ticket');
+    if (ticketId) {
+      setSelectedRequestId(ticketId);
+    }
+  }, [setSelectedRequestId]);
 
   // Global Keyboard Shortcuts: 'N' for new request, '/' to focus search
   React.useEffect(() => {
@@ -52,6 +66,8 @@ const MainDashboard: React.FC = () => {
         onOpenNewRequest={() => setShowNewRequest(true)}
         onOpenClientManager={() => setShowClientManager(true)}
         onOpenAuthModal={() => setShowAuthModal(true)}
+        onOpenAnalytics={() => setShowAnalytics(true)}
+        onOpenActivityFeed={() => setShowActivityFeed(true)}
       />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-6">
@@ -91,6 +107,14 @@ const MainDashboard: React.FC = () => {
 
       {showAuthModal && (
         <AuthModal onClose={() => setShowAuthModal(false)} />
+      )}
+
+      {showAnalytics && (
+        <AnalyticsModal onClose={() => setShowAnalytics(false)} />
+      )}
+
+      {showActivityFeed && (
+        <ActivityFeedModal onClose={() => setShowActivityFeed(false)} />
       )}
 
       {/* Footer */}
