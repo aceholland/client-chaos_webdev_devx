@@ -12,7 +12,7 @@ import {
   Trash2,
   AlertTriangle,
   Send,
-  Sparkles,
+  Terminal,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -35,6 +35,7 @@ export const RequestDetailDrawer: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'comments' | 'history'>('comments');
   const [newCommentText, setNewCommentText] = useState('');
   const [copiedUpdate, setCopiedUpdate] = useState(false);
+  const [updateTemplate, setUpdateTemplate] = useState<'client' | 'escalation'>('client');
 
   if (!selectedRequest) return null;
 
@@ -52,8 +53,6 @@ export const RequestDetailDrawer: React.FC = () => {
     await addComment(selectedRequest.id, newCommentText);
     setNewCommentText('');
   };
-
-  const [updateTemplate, setUpdateTemplate] = useState<'client' | 'escalation'>('client');
 
   const generatedUpdateText = (() => {
     const statusLabel = STATUS_CONFIG[selectedRequest.status]?.clientMessageSnippet || selectedRequest.status;
@@ -183,7 +182,7 @@ export const RequestDetailDrawer: React.FC = () => {
             <div className="border border-[var(--border-color)] p-4 bg-transparent space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                  <Terminal className="w-3.5 h-3.5 text-[var(--text-primary)]" />
                   <span>Update Generator</span>
                 </div>
 
