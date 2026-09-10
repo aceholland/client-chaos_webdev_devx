@@ -109,10 +109,13 @@ Located above the request list, quick tabs provide 1-click filtering:
 ---
 
 ### 9. Analytics & Resolution Metrics
-- Access via the **ANALYTICS** button in the navigation bar.
-- **Resolution Velocity Trend Chart**: SVG line chart tracking resolved requests over time with 7-Day and 30-Day toggles.
-- **Workload per Assignee Chart**: Horizontal bar chart visualizing active tasks assigned per team member.
-- **Client Completion Rate Chart**: Bar chart depicting completion percentages across client accounts.
+- Access via the **ANALYTICS** button in the navigation bar with two dedicated views:
+  1. **Member Work & Personal Stats**:
+     - **Personal Work Summary Card**: Real-time performance breakdown for the currently logged-in user (Completed tickets, Active queue, Personal Completion Rate %, and 7D/30D turnaround counts with recent resolved ticket list).
+     - **Work Completed by Each Team Member**: Full team productivity breakdown displaying Completed (`DONE`) count, Active (`ACTIVE`) count, completion rate %, segmented progress bar, and 1-click **VIEW DONE** expandable ticket drawer showing individual resolved requests.
+  2. **Velocity & Client Overview**:
+     - **Resolution Velocity Trend Chart**: SVG line chart tracking resolved requests over time with 7-Day and 30-Day toggles.
+     - **Client Completion Rate Chart**: Bar chart depicting completion percentages across client accounts.
 
 ---
 
